@@ -9,4 +9,9 @@ Author: Sandfox
 
 namespace Tagd;
 
-require_once __DIR__ . '/controllers/'
+const PLUGIN_PATH = __DIR__;
+
+require_once __DIR__ . '/views/base.php';
+require_once __DIR__ . '/lib/loader.php';
+
+load_controller( 'shortcode-tagd.php' );
