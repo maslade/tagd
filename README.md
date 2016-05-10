@@ -1,0 +1,2 @@
+# tagd
+Tags WordPress plugin
