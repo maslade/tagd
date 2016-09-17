@@ -73,6 +73,10 @@ body {
     padding-top: 15px;
 }
 
+#browser .search {
+	padding: 0 15px;
+}
+
 #browser .left_panel .row {
     margin-bottom: 8px;
 }

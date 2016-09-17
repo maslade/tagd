@@ -14,12 +14,12 @@ $view = new ViewerView();
     <body>
         <div id="browser" class="container-fluid">
             <div class="row">
-                <div class="left_panel col-sm-2">
+                <div class="left_panel col-xs-2">
                     <div class="row search">
                         <div class="col-sm-12 input-group input-group-sm">
                           <input type="text" class="form-control" data-control="search" placeholder="Search..." autocomplete="off" />
                           <span class="input-group-btn">
-                            <button class="btn btn-default" type="button">Go!</button>
+                            <button class="btn btn-primary" data-control="go_btn" type="button">Go!</button>
                           </span>
                         </div>
                     </div>
@@ -62,7 +62,7 @@ $view = new ViewerView();
                     
                     <div class="row title">
                         <div class="col-sm-12">
-                            </a><span data-control="current_title" data-contrl-mixin="label">a file named whatever</span>
+                            <span data-control="current_title"></span>
                         </div>
                     </div>
                     
@@ -80,10 +80,10 @@ $view = new ViewerView();
                     
                     <div class="row details">
                         <div class="col-sm-12">
-                            <div data-control="current_dimentions">800 x 600</div>
+                            <div data-control="current_dimensions"></div>
                             <div>
                                 Posted on
-                                <span data-control="post_date">1/13/13</span>
+                                <span data-control="post_date"></span>
                             </div>
                         </div>
                     </div>
@@ -91,19 +91,11 @@ $view = new ViewerView();
                     <div class="row tags">
                         <div class="col-sm-12">
                             <ul data-control="tags">
-                                <li><a data-control href="#">brunette</a><span class="c">(4,573)</span></li>
-                                <li><a data-control href="#">young </a><span class="c">(1,774)</span></li>
-                                <li><a data-control href="#">blowjob </a><span class="c">(534)</span></li>
-                                <li><a data-control href="#">bending over </a><span class="c">(377)</span></li>
-                                <li><a data-control href="#">nn </a><span class="c">(310)</span></li>
-                                <li><a data-control href="#">3 girls </a><span class="c">(152)</span></li>
-                                <li><a data-control href="#">crying </a><span class="c">(40)</span></li>
-                                <li><a data-control href="#">forced deepthroat </a><span class="c">(35)</span></li>
                             </ul>
                         </div>
                     </div>
                 </div>
-                <div class="stage col-sm-10" data-control="stage">
+                <div class="stage col-xs-10" data-control="stage">
                     
                 </div>
             </div>

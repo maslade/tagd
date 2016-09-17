@@ -23,6 +23,9 @@ class Assets extends Base {
                 'feed' => $this->rpc_url( \Tagd\EP_FEED ),
                 'tag_autocomplete' => $this->rpc_url( \Tagd\EP_TAG_AUTOCOMPLETE ),
             ),
+            'lang' => array(
+                'no_results' => __( 'No results.', 'tagd' ),
+            ),
         );
 
         add_action( 'wp_enqueue_scripts', array( $this, 'register' ) );

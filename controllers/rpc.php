@@ -76,7 +76,7 @@ class RPC {
             $query_args['tax_query'] = array(
                 array(
                     'taxonomy' => $settings->item_taxonomy,
-                    'operator' => 'IN',
+                    'operator' => 'AND',
                     'field' => 'slug',
                     'terms' => $filters['tags'],
                 )
@@ -86,7 +86,7 @@ class RPC {
         $query = new \WP_Query( $query_args );
         
         $feed = array(
-            'items' => array_map( array( $this, 'format_for_output' ), $query->posts ),
+            'items' => array_map( array( '\Tagd\Models\Item', 'get' ), $query->posts ),
             'filters' => $filters,
             'total_items' => $query->post_count,
             'page' => $query->paged,
@@ -94,18 +94,6 @@ class RPC {
         );
         
         $this->send_json( $feed );
-    }
-    
-    protected function format_for_output( $post ) {
-        return array(
-            'id' => $post->ID,
-            'date' => $post->post_date,
-            'modified' => $post->post_modified,
-            'title' => $post->post_title,
-            'markup_full' => wp_get_attachment_image( $post->ID, 'full' ),
-            'markup_thumb' => wp_get_attachment_image( $post->ID, 'thumbnail' ),
-            'markup_pinky' => '',
-        );
     }
     
     protected function tag_autocomplete() {
@@ -119,13 +107,14 @@ class RPC {
         
         $terms = get_terms( $args );
         usort( $terms, array( $this, 'sort_terms_by_count' ) );
+        $tags = array_map( array( '\Tagd\Models\Tag', 'get' ), $terms );
         
         $suggestions = array();
         
-        foreach ( $terms as $term ) {
+        foreach ( $tags as $tag ) {
             $suggestions[] = array(
-                'label' => sprintf( '%s (%d)', $term->name, $term->count ),
-                'value' => $term->slug
+                'label' => $tag->term->name,
+                'value' => $tag->term->slug
             );
         }
         

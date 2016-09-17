@@ -40,8 +40,13 @@
     };
     
     API.prototype.reset = function() {        
+        var old_val = this.get();
         this.set_all( false );
         this.set( this.options.initial );
+        
+        if ( this.get() != old_val ) {
+            this.change();
+        }
     };
     
     API.prototype.get = function( i ) {
@@ -129,12 +134,12 @@
 ( function( $ ) {
     NAMESPACE = 'autocomplete_pills';
     
-    function make_pill( value ) {
+    function make_pill( value, label ) {
         return this.$pill_template.clone()
                    .removeAttr( 'data-template' )
                    .attr( 'data-value', value )
                    .find( '[data-template-tag="label"]' )
-                     .replaceWith( value )
+                     .replaceWith( label )
                    .end();
     }
     
@@ -146,8 +151,9 @@
     
     API.options =
         {
+            'allow_unknown':    true,
             'autocomplete_url': '',
-            'pill_container': null
+            'pill_container':   null
         };
     
     API.prototype.init = function() {
@@ -165,6 +171,9 @@
                 'select': this.events.select_suggestion.bind( this )
             }
         );
+    
+        this.$search.keypress(
+        );
 
         $( document.body ).on( 'click', '.pill button', { 'api': this }, function( e ) {
             e.preventDefault();
@@ -175,19 +184,29 @@
     };
     
     API.prototype.reset = function() {
+        var old_val = this.get();
         this.$search.val( '' );
         this.$pills_container.empty();
+        
+        if ( this.get() != old_val ) {
+            this.$search.trigger( 'change.tagd' );
+        }
     };
     
     API.prototype.get = function() {
         return this.$pills_container.children().map( function() { return $( this ).data( 'value' ); } ).toArray();
     };
     
+    API.prototype.add_pill = function( value, label ) {
+        this.$pills_container.append( make_pill.call( this, value, label ) );
+        this.$search.trigger( 'change.tagd' );
+    };
+    
     API.prototype.events = {
         'select_suggestion': function( e, ui ) {
             e.preventDefault();
             this.$search.val( '' );
-            this.$pills_container.append( make_pill.call( this, ui.item.value ) );
+            this.$pills_container.append( make_pill.call( this, ui.item.value, ui.item.label ) );
             this.$search.trigger( 'change.tagd' );
         }
     };
@@ -248,6 +267,8 @@
     API.prototype.show = function( items ) {
         this.$container.empty();
         
+        var changing = items != this.items;
+        
         this.items = items = 'length' in items ? items : [ items ];
         
         if ( items.length === 0 ) {
@@ -255,11 +276,15 @@
         }
         
         if ( items.length === 1 ) {
-            this.show_single();
+            this.show_single( this.items[0] );
         }
         
         if ( items.length > 1 ) {
-            this.show_multiple();
+            this.show_multiple( this.items );
+        }
+        
+        if ( changing ) {
+            this.$container.trigger( 'change.tagd' );
         }
     };
     
@@ -267,16 +292,127 @@
         alert( 'no results - todo' );
     };
     
-    API.prototype.show_single = function() {
-        this.$container.append( this.items[0].markup_full );
+    API.prototype.show_single = function( item ) {
+        $( item.markup_full ).data( 'item.tagd', item )
+                             .appendTo( this.$container );
     };
     
-    API.prototype.show_multiple = function() {
-        for ( var i = 0; i < this.items.length; i++ ) {
-            this.$container.append( this.items[ i ].markup_thumb );
+    API.prototype.show_multiple = function( items ) {
+        var item;
+        for ( var i = 0; i < items.length; i++ ) {
+            item = $( items[ i ].markup_thumb )
+                   .data( 'item.tagd', items[ i ] )
+                   .on( 'click', { 'api': this }, click );
+            this.$container.append( item );
+        }
+        
+        function click( e ) {
+            e.data.api.show( $( this ).data( 'item.tagd' ) );
         }
     };
     
+    function Plugin( options ) {
+        if ( options === 'api' ) {
+            return this.data( NAMESPACE );
+        }
+
+        var action = typeof options === 'string' ? options : '';
+        var options = typeof options === 'object' ? options : {};
+        var args = Array.prototype.slice.call( arguments, 1 );
+        
+        return this.each(
+            function() {
+                var $this = $(this);
+                var api = $this.data( NAMESPACE );
+                if ( action && ! api ) return;
+                if ( ! api )           $this.data( NAMESPACE, api = new API( this, options ) );
+                if ( action )          api[ action ].apply( api, args );
+            }
+        );
+    }
+    
+    var old = $.fn[ NAMESPACE ];
+
+    $.fn[ NAMESPACE ] = Plugin;
+    
+    $.fn[ NAMESPACE ].noConflict = function() {
+        $.fn[ NAMESPACE ] = old;
+        return this;
+    };
+} )( jQuery, window );
+
+// Meta plugin.
+( function( $ ) {
+    NAMESPACE = 'meta_panel';
+    
+    function API( container, options ) {
+        this.$container = $( container );
+        this.options = $.extend( {}, API.options, typeof options === 'object' && options || {} );
+        this.init();
+    }
+    
+    API.options =
+        {
+        };
+    
+    API.prototype.init = function() {
+        this.items = [];
+        this.$title = $( '[data-control="current_title"]', this.$container );
+        this.$dimensions = $( '[data-control="current_dimensions"]', this.$container );
+        this.$date = $( '[data-control="post_date"]', this.$container );
+        this.$tags = $( '[data-control="tags"]', this.$container );
+        this.$except_title = $( [ this.$dimensions, this.$date, this.$tags ] );
+        this.$tags.on( 'click', 'li', function() { tagd( 'filter' ).add_tag( $( this ).data( 'tag.tagd' ) ); } );
+    };
+    
+    API.prototype.reset = function() {
+        if ( this.items.length === 0 ) {
+            reset_none.call( this );
+        }
+        
+        if ( this.items.length === 1 ) {
+            reset_single.call( this, this.items[0] );
+        }
+        
+        if ( this.items.length > 1 ) {
+            reset_multiple.call( this, this.items );
+        }
+        
+        // I think these are less useful so I'm leaving them private.
+        function reset_none() {
+            this.$except_title.hide();
+            this.$title.text( tagd_js.lang.no_results ).hide();
+        }
+        
+        function reset_single( i ) {
+            this.$except_title.show();
+            this.$title.text( i.title );
+            this.$dimensions.text( i.dimensions );
+            this.$date.text( i.date );
+            this.set_tags( i.tags );
+        }
+        
+        function reset_multiple( items ) {
+            this.$except_title.show();
+        }
+    };
+    
+    API.prototype.set_tags = function( tag_list ) {
+        this.$tags.empty();
+        
+        for ( var i = 0, t; i < tag_list.length; i++ ) {
+            t = tag_list[ i ];
+            $( '<li>' ).text( t.label )
+                      .data( 'tag.tagd', t )
+                      .appendTo( this.$tags );
+        }
+    }
+    
+    API.prototype.update = function( items ) {
+        this.items = items;
+        this.reset();
+    }
+
     function Plugin( options ) {
         if ( options === 'api' ) {
             return this.data( NAMESPACE );
@@ -311,7 +447,7 @@
 ( function( $, exports ) {
     function results_handler_wrapper( user_handler ) {
         return function inner() {
-            this.loading = false;
+            this.current_request = null;
             user_handler.apply( this, arguments );
         };
     }
@@ -351,6 +487,8 @@
         this.current_request = $.getJSON( this.url, args, results_handler_wrapper( results_handler ).bind( this ) );
     };
     
+    Feed.prototype.is_loading = function() { return Boolean( this.current_request ); }
+    
     exports.Feed = Feed;
 } )( jQuery, window );
 
@@ -382,6 +520,10 @@
         $( this ).trigger( 'change.tagd' )
     };
     
+    FilterController.prototype.add_tag = function( tag ) {
+        this.$search.autocomplete_pills( 'add_pill', tag.slug, tag.name );
+    };
+    
     FilterController.prototype.extract = function() {
         return {
             'tags': this.$search.autocomplete_pills( 'api' ).get(),
@@ -397,6 +539,7 @@
 jQuery( function( $ ) {
     var clear_btn = $( '[data-control="clear_btn"]' );
     var unrated = $( '[data-control="unrated"]' );
+    var meta = $( '.left_panel' ).meta_panel();
     var search = $( '[data-control="search"]' ).autocomplete_pills(
         {
             'autocomplete_url':  tagd_js.rpc.tag_autocomplete,
@@ -414,13 +557,25 @@ jQuery( function( $ ) {
         }
     );
 
-    $( filters ).on( 'change.tagd', function() {
+    var go_btn = $( '[data-control="go_btn"]' ).click( refresh );
+    $( filters ).on( 'change.tagd', maybe_refresh );
+    $( stage ).on( 'change.tagd', function() {
+        meta.meta_panel( 'update', stage.stage( 'api' ).items );
+    } );
+    
+    function maybe_refresh() {
+        if ( ! feed.current_request ) {
+            refresh();
+        }
+    }
+    
+    function refresh() {
         var filter_args = filters.extract();
         feed.update_filters( filter_args );
         feed.fetch( function( results ) {
             stage.stage( 'show', results.items );
         } );
-    } );
+    }
     
     $( document ).data( 'tagd',
         {
@@ -434,6 +589,9 @@ jQuery( function( $ ) {
         ratings.ratings( 'reset' );
         unrated.prop( 'checked', false );
     } );
+    
+    
+    refresh();
 } );
 
 function tagd( yarr_matey ) {

@@ -29,7 +29,10 @@ require_once __DIR__ . '/views/admin-settings.php';
 require_once __DIR__ . '/views/viewer.php';
 require_once __DIR__ . '/controllers/base.php';
 require_once __DIR__ . '/models/settings.php';
+require_once __DIR__ . '/models/item.php';
+require_once __DIR__ . '/models/tag.php';
 require_once __DIR__ . '/lib/loader.php';
+require_once __DIR__ . '/lib/diagnostics.php';
 
 load_controller( 'data-structure.php' );
 load_controller( 'assets.php' );
