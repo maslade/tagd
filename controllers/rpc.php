@@ -16,7 +16,7 @@ class RPC {
         'post_type' => 'attachment',
         'post_status' => 'inherit',
         'paged' => 1,
-        'posts_per_page' => 15,
+        'posts_per_page' => 3,
     );
     
     public $feed_filters = array(
@@ -103,7 +103,7 @@ class RPC {
             'modified' => $post->post_modified,
             'title' => $post->post_title,
             'markup_full' => wp_get_attachment_image( $post->ID, 'full' ),
-            'markup_thumb' => '',
+            'markup_thumb' => wp_get_attachment_image( $post->ID, 'thumbnail' ),
             'markup_pinky' => '',
         );
     }

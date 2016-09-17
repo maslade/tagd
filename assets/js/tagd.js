@@ -124,6 +124,94 @@
     };
 } )( jQuery, window );
 
+// Pill search plugin.
+( function( $ ) {
+    NAMESPACE = 'autocomplete_pills';
+    
+    function make_pill( value ) {
+        return this.$pill_template.clone()
+                   .removeAttr( 'data-template' )
+                   .prop( 'data-value', value )
+                   .find( '[data-template-tag="label"]' )
+                     .replaceWith( value )
+                   .end();
+    }
+    
+    function API( search, options ) {
+        this.$search = $( search );
+        this.options = $.extend( {}, API.options, typeof options === 'object' && options || {} );
+        this.init();
+    }
+    
+    API.options =
+        {
+            'autocomplete_url': '',
+            'pill_container': null,
+        };
+    
+    API.prototype.init = function() {
+        if ( this.options.pill_container ) {
+            this.$pills_container = $( this.options.pill_container );
+        } else {
+            this.$pills_container = this.$search.parent();
+        }
+        
+        this.$pill_template = $( '[data-template="pill"]', this.$pills_container );
+
+        this.$search.autocomplete(
+            {
+                'source': this.options.autocomplete_url,
+                'select': this.events.select_suggestion.bind( this )
+            }
+        );
+
+        $( document.body ).on( 'click', '.pill button', function( e ) {
+            e.preventDefault();
+            $( this ).parents( '.pill:first' ).remove();
+        } );
+        this.reset();
+    };
+    
+    API.prototype.reset = function() {
+    };
+    
+    API.prototype.events = {
+        'select_suggestion': function( e, ui ) {
+            e.preventDefault();
+            this.$search.val( '' );
+            this.$pills_container.append( make_pill.call( this, ui.item.value ) );
+        }
+    };
+    
+    function Plugin( options ) {
+        if ( options === 'api' ) {
+            return this.data( NAMESPACE );
+        }
+
+        var action = typeof options === 'string' ? options : '';
+        var options = typeof options === 'object' ? options : {};
+        var args = Array.prototype.slice.call( arguments, 1 );
+        
+        return this.each(
+            function() {
+                var $this = $(this);
+                var api = $this.data( NAMESPACE );
+                if ( action && ! api ) return;
+                if ( ! api )           $this.data( NAMESPACE, api = new API( this, options ) );
+                if ( action )          api[ action ].apply( api, args );
+            }
+        );
+    }
+    
+    var old = $.fn[ NAMESPACE ];
+
+    $.fn[ NAMESPACE ] = Plugin;
+    
+    $.fn[ NAMESPACE ].noConflict = function() {
+        $.fn[ NAMESPACE ] = old;
+        return this;
+    };
+} )( jQuery );
 
 // Stage plugin.
 ( function( $ ) {
@@ -173,6 +261,9 @@
     };
     
     API.prototype.show_multiple = function() {
+        for ( var i = 0; i < this.items.length; i++ ) {
+            this.$container.append( this.items[ i ].markup_thumb );
+        }
     };
     
     function Plugin( options ) {
@@ -250,12 +341,15 @@
 
 // Front-end glue.
 jQuery( function( $ ) {
-    var search = $( '[data-control="search"]' );
-    var search_pills_container = $( '[data-control="search_pills"]' );
-    var pill_template = $( '[data-template="pill"]' );
     var clear_btn = $( '[data-control="clear_btn"]' );
-    var ratings_filter = $( '[data-control="search_rating"]' ).ratings();
     var unrated_filter = $( '[data-control="unrated"]' );
+    var autocomplete_pills = $( '[data-control="search"]' ).autocomplete_pills(
+        {
+            'autocomplete_url': tagd_js.rpc.tag_autocomplete,
+            'pill_container':   '[data-control="search_pills"]'
+        }
+    );
+    var ratings_filter = $( '[data-control="search_rating"]' ).ratings();
     var stage = $( '[data-control="stage"]' ).stage();
     var feed = new Feed( tagd_js.rpc.feed );
     
@@ -265,34 +359,12 @@ jQuery( function( $ ) {
         }
     );
     
-    search.autocomplete( {
-        'source': tagd_js.rpc.tag_autocomplete,
-        'select': function( e, ui ) {
-            e.preventDefault();
-            search.val( '' );
-            search_pills_container.append( make_pill( ui.item.value ) );
-        }
-    } );
-    
-    $( document.body ).on( 'click', '.pill button', function( e ) {
-        e.preventDefault();
-        $( this ).parents( '.pill:first' ).remove();
-    } );
-    
     $( clear_btn ).click( function( e ) {
         search_pills_container.empty();
         search.val( '' ); 
         ratings_filter.ratings( 'reset' );
         unrated_filter.prop( 'checked', false );
     } );
-    
-    function make_pill( value ) {
-        var pill = pill_template.clone();
-        pill.removeAttr( 'data-template' );
-        pill.prop( 'data-value', value );
-        $( '[data-template-tag="label"]', pill ).replaceWith( value );
-        return pill;
-    }
 } );
 
 function tagd( yarr_matey ) {
