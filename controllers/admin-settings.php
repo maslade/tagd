@@ -48,12 +48,13 @@ class AdminSettings extends Base {
     }
     
     protected function handle_input() {
-        $input = isset( $_POST['tagd'] ) ? stripslashes_deep( $_POST['tagd'] ) : array();
+        $input = isset( $_POST['tagd'] ) ? wp_unslash( $_POST['tagd'] ) : array();
         $nonce = isset( $input[ $this->settings['main_menu']['nonce']['name'] ] ) ? $input[ $this->settings['main_menu']['nonce']['name'] ] : null;
         $action = $this->settings['main_menu']['nonce']['action'];
 
         if ( $nonce && wp_verify_nonce( $nonce, $action ) ) {
             $this->did_update = $this->settings_model->save_permalink( $input['permalink'] );
+            flush_rewrite_rules();
         }
     }
 }

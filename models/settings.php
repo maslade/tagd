@@ -5,6 +5,8 @@ namespace Tagd\Models;
 class Settings {
     public $option_prefix = 'tagd_';
     
+    public $item_taxonomy = 'post_tag';
+    
     public function save( $name, $value, $autoload = false ) {
         return update_option( $this->option_prefix . $name, $value, $autoload );
     }

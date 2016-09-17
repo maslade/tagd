@@ -1,13 +1,15 @@
-<!DOCTYPE html>
+<?php
+
+namespace Tagd\Views;
+
+$view = new ViewerView();
+
+?><!DOCTYPE html>
 <html>
     <head>
-        <title>Slideshow v3.bootstrap</title>
-        
-        <!-- {% load static %} -->
-
         <link href='http://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext' rel='stylesheet' type='text/css' />
-        <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}" type="text/css" />
-        <link rel="stylesheet" href="{% static 'css/viewer3.css' %}" type="text/css" />
+        
+        <?php wp_head(); ?>
     </head>
     <body>
         <div id="browser" class="container-fluid">
@@ -112,15 +114,7 @@
                 </div>
             </div>
         </div>
-        
-        <script src="{% static 'js/browser/jquery-2.2.3.min.js' %}"></script>
-        <script src="{% static 'lattice/js/lattice.js' %}"></script>
-        <script src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
-        <script src="{% static 'js/browser/browser.js' %}"></script>
-        <script type="text/javascript">
-            jQuery( function( $ ) {
-                window.browser = Lattice.create( $( '#browser' ) );
-            } );
-        </script>
-    </body>
+
+        <?php wp_footer(); ?>
+    </body>    
 </html>

@@ -4,11 +4,13 @@ namespace Tagd\Controllers;
 
 class Assets extends Base {
     public $scripts = array(
-        \Tagd\SCRIPT_TAGD => array( 'file' => 'assets/js/tagd.js' ),
+        \Tagd\SCRIPT_TAGD => array( 'file' => 'assets/js/tagd.js', 'deps' => array( 'jquery' ) ),
+        \Tagd\SCRIPT_BOOTSTRAP => array( 'file' => 'assets/bootstrap/bootstrap.min.js' ),
     );
     
     public $css = array(
-        \Tagd\STYLE_TAGD_FRONT_END => array( 'file' => 'assets/js/tagd-front.js' ),
+        \Tagd\STYLE_TAGD_FRONT_END => array( 'file' => 'assets/css/tagd-front.css' ),
+        \Tagd\STYLE_BOOTSTRAP => array( 'file' => 'assets/bootstrap/bootstrap.css' ),
     );
     
     public function __construct() {

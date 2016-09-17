@@ -13,7 +13,7 @@ function load_admin_controller( $filename ) {
 }
 
 function load_ajax_controller( $filename ) {
-    if ( defined( DOING_AJAX ) && DOING_AJAX ) {
+    if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
         return load_controller( $filename );
     }
 }
