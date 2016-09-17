@@ -20,6 +20,7 @@ class Assets extends Base {
     public function __construct() {
         $this->script_manifests[ \Tagd\SCRIPT_TAGD ] = array(
             'rpc' => array( 
+                'feed' => $this->rpc_url( \Tagd\EP_FEED ),
                 'tag_autocomplete' => $this->rpc_url( \Tagd\EP_TAG_AUTOCOMPLETE ),
             ),
         );

@@ -8,6 +8,8 @@ class RPC {
         \Tagd\EP_FEED
     );
     
+    public $private_endpoints = array();
+    
     public $maximum_results = 15;
     
     public $feed_args = array(
@@ -18,6 +20,10 @@ class RPC {
     );
     
     public $feed_filters = array(
+        'page' => 0,
+        'tags' => array(),
+        'ratings' => null,
+        'unrated' => false,
     );
     
     public function __construct() {
@@ -58,13 +64,29 @@ class RPC {
     protected function feed() {
         $settings = new \Tagd\Models\Settings();
         
-        $args = $this->feed_args();
-        $filters = wp_parse_args( wp_unslash( $_GET['filters'] ), $this->feed_filters );
+        $query_args = $this->feed_args;
+        $user_filters = wp_unslash( isset( $_GET['filters'] ) ? $_GET['filters'] : array() );
+        $filters = wp_parse_args( $user_filters, $this->feed_filters );
+        
+        if ( is_string( $filters['tags'] ) ) {
+            $filters['tags'] = explode( ',', $filters['tags'] );
+        }
+        
+        if ( $filters['tags'] ) {
+            $query_args['tax_query'] = array(
+                array(
+                    'taxonomy' => $settings->item_taxonomy,
+                    'operator' => 'IN',
+                    'field' => 'slug',
+                    'terms' => $filters['tags'],
+                )
+            );
+        }
 
         $query = new \WP_Query( $query_args );
         
         $feed = array(
-            'items' => $query->posts,
+            'items' => array_map( array( $this, 'format_for_output' ), $query->posts ),
             'filters' => $filters,
             'total_items' => $query->post_count,
             'page' => $query->paged,
@@ -72,6 +94,18 @@ class RPC {
         );
         
         $this->send_json( $feed );
+    }
+    
+    protected function format_for_output( $post ) {
+        return array(
+            'id' => $post->ID,
+            'date' => $post->post_date,
+            'modified' => $post->post_modified,
+            'title' => $post->post_title,
+            'markup_full' => wp_get_attachment_image( $post->ID, 'full' ),
+            'markup_thumb' => '',
+            'markup_pinky' => '',
+        );
     }
     
     protected function tag_autocomplete() {

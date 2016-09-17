@@ -109,7 +109,7 @@
                 var api = $this.data( NAMESPACE );
                 if ( action && ! api ) return;
                 if ( ! api )           $this.data( NAMESPACE, api = new API( this, options ) );
-                if ( action )          api[ action ]( args );
+                if ( action )          api[ action ].apply( api, args );
             }
         );
     }
@@ -144,12 +144,35 @@
     };
     
     API.prototype.reset = function() {
+        this.items = [];
         this.$container.empty();
     };
     
-    API.prototype.show = function( item ) {
-        alert( 'Showing ' + item );
-        console.log( item );
+    API.prototype.show = function( items ) {
+        this.items = items = 'length' in items ? items : [ items ];
+        
+        if ( items.length === 0 ) {
+            this.items.show_none();
+        }
+        
+        if ( items.length === 1 ) {
+            this.show_single();
+        }
+        
+        if ( items.length > 1 ) {
+            this.show_multiple();
+        }
+    };
+    
+    API.prototype.show_none = function() {
+        alert( 'no results - todo' );
+    };
+    
+    API.prototype.show_single = function() {
+        this.$container.append( this.items[0].markup_full );
+    };
+    
+    API.prototype.show_multiple = function() {
     };
     
     function Plugin( options ) {
@@ -167,7 +190,7 @@
                 var api = $this.data( NAMESPACE );
                 if ( action && ! api ) return;
                 if ( ! api )           $this.data( NAMESPACE, api = new API( this, options ) );
-                if ( action )          api[ action ]( args );
+                if ( action )          api[ action ].apply( api, args );
             }
         );
     }
@@ -183,10 +206,47 @@
 } )( jQuery, window );
 
 // Feed.
-( function( $ ) {
-    function Feed() {
+( function( $, exports ) {
+    function results_handler_wrapper( user_handler ) {
+        return function inner() {
+            this.loading = false;
+            user_handler.apply( this, arguments );
+        }
     }
-} )( jQuery );
+    
+    function Feed( url, filters ) {
+        this.url = url;
+        this.filters = $.extend( {}, Feed.filters, filters === 'object' ? filters : {} );
+        this.current_request = null;
+    }
+    
+    Feed.filters = {};
+    
+    Feed.prototype.update_filters = function( filters, reset ) {
+        if ( reset ) {
+            this.filters = Feed.filters;
+        }
+        $.extend( this.filters, filters );
+    };
+    
+    Feed.prototype.set_filters = function( filters ) { this.update_filters( filters, true ); };
+    
+    Feed.prototype.fetch = function( results_handler ) {
+        var args = {};
+        
+        for ( var key in this.filters ) {
+            args[ 'filters[' + key + ']' ] = this.filters[ key ];
+        }
+        
+        if ( this.current_request ) {
+            this.current_request.abort();
+        }
+        
+        this.current_request = $.getJSON( this.url, args, results_handler_wrapper( results_handler ).bind( this ) );
+    };
+    
+    exports.Feed = Feed;
+} )( jQuery, window );
 
 // Front-end glue.
 jQuery( function( $ ) {
@@ -197,6 +257,13 @@ jQuery( function( $ ) {
     var ratings_filter = $( '[data-control="search_rating"]' ).ratings();
     var unrated_filter = $( '[data-control="unrated"]' );
     var stage = $( '[data-control="stage"]' ).stage();
+    var feed = new Feed( tagd_js.rpc.feed );
+    
+    $( document ).data( 'tagd',
+        {
+            'feed': feed
+        }
+    );
     
     search.autocomplete( {
         'source': tagd_js.rpc.tag_autocomplete,
@@ -227,3 +294,8 @@ jQuery( function( $ ) {
         return pill;
     }
 } );
+
+function tagd( yarr_matey ) {
+    var data = jQuery( document ).data( 'tagd' );
+    return data[ yarr_matey ];
+};
