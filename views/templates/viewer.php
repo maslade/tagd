@@ -103,8 +103,8 @@ $view = new ViewerView();
                         </div>
                     </div>
                 </div>
-                <div class="stage col-sm-10">
-                    The stage.
+                <div class="stage col-sm-10" data-control="stage">
+                    
                 </div>
             </div>
         </div>

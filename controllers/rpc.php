@@ -3,9 +3,22 @@
 namespace Tagd\Controllers;
 
 class RPC {
-    public $public_endpoints = array( \Tagd\EP_TAG_AUTOCOMPLETE );
+    public $public_endpoints = array(
+        \Tagd\EP_TAG_AUTOCOMPLETE,
+        \Tagd\EP_FEED
+    );
     
     public $maximum_results = 15;
+    
+    public $feed_args = array(
+        'post_type' => 'attachment',
+        'post_status' => 'inherit',
+        'paged' => 1,
+        'posts_per_page' => 15,
+    );
+    
+    public $feed_filters = array(
+    );
     
     public function __construct() {
         add_action( 'init', array( $this, 'register_endpoints' ) );
@@ -28,17 +41,40 @@ class RPC {
             case \Tagd\EP_TAG_AUTOCOMPLETE:
                 $this->tag_autocomplete();
                 break;
+            
+            case \Tagd\EP_FEED:
+                $this->feed();
+                break;
         }
         
         die;
     }
     
-    public function send_json( $object ) {
+    protected function send_json( $object ) {
         header( 'Content-type: application/json' );
         echo json_encode( $object );
     }
     
-    public function tag_autocomplete() {
+    protected function feed() {
+        $settings = new \Tagd\Models\Settings();
+        
+        $args = $this->feed_args();
+        $filters = wp_parse_args( wp_unslash( $_GET['filters'] ), $this->feed_filters );
+
+        $query = new \WP_Query( $query_args );
+        
+        $feed = array(
+            'items' => $query->posts,
+            'filters' => $filters,
+            'total_items' => $query->post_count,
+            'page' => $query->paged,
+            'total_pages' => $query->max_num_pages,
+        );
+        
+        $this->send_json( $feed );
+    }
+    
+    protected function tag_autocomplete() {
         $settings = new \Tagd\Models\Settings();
         $search = wp_unslash( $_GET['term'] );
         $args = array( 'name__like' => $search,
@@ -62,7 +98,7 @@ class RPC {
         $this->send_json( $suggestions );
     }
     
-    public function sort_terms_by_count( $a, $b ) {
+    protected function sort_terms_by_count( $a, $b ) {
         return (int) $b->count - (int) $a->count;
     }
 }

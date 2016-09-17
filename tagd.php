@@ -13,6 +13,7 @@ const PLUGIN_PATH = __DIR__;
 const PLUGIN_FILE = __FILE__;
 const PLUGIN_VERSION = '0.0.1';
 
+const EP_FEED = 'tagd_feed';
 const EP_TAG_AUTOCOMPLETE = 'tagd_autocomplete';
 
 const SCRIPT_TAGD = 'tagd_js';

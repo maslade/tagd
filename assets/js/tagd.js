@@ -143,7 +143,13 @@
         this.reset();
     };
     
-    API.prototype.reset = function() {        
+    API.prototype.reset = function() {
+        this.$container.empty();
+    };
+    
+    API.prototype.show = function( item ) {
+        alert( 'Showing ' + item );
+        console.log( item );
     };
     
     function Plugin( options ) {
@@ -176,7 +182,11 @@
     };
 } )( jQuery, window );
 
-
+// Feed.
+( function( $ ) {
+    function Feed() {
+    }
+} )( jQuery );
 
 // Front-end glue.
 jQuery( function( $ ) {
@@ -186,6 +196,7 @@ jQuery( function( $ ) {
     var clear_btn = $( '[data-control="clear_btn"]' );
     var ratings_filter = $( '[data-control="search_rating"]' ).ratings();
     var unrated_filter = $( '[data-control="unrated"]' );
+    var stage = $( '[data-control="stage"]' ).stage();
     
     search.autocomplete( {
         'source': tagd_js.rpc.tag_autocomplete,
