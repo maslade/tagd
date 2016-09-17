@@ -146,7 +146,7 @@
     API.options =
         {
             'autocomplete_url': '',
-            'pill_container': null,
+            'pill_container': null
         };
     
     API.prototype.init = function() {
@@ -173,6 +173,8 @@
     };
     
     API.prototype.reset = function() {
+        this.$search.val( '' );
+        this.$pills_container.empty();
     };
     
     API.prototype.events = {
@@ -302,7 +304,7 @@
         return function inner() {
             this.loading = false;
             user_handler.apply( this, arguments );
-        }
+        };
     }
     
     function Feed( url, filters ) {
@@ -342,14 +344,14 @@
 // Front-end glue.
 jQuery( function( $ ) {
     var clear_btn = $( '[data-control="clear_btn"]' );
-    var unrated_filter = $( '[data-control="unrated"]' );
-    var autocomplete_pills = $( '[data-control="search"]' ).autocomplete_pills(
+    var unrated = $( '[data-control="unrated"]' );
+    var search = $( '[data-control="search"]' ).autocomplete_pills(
         {
             'autocomplete_url': tagd_js.rpc.tag_autocomplete,
             'pill_container':   '[data-control="search_pills"]'
         }
     );
-    var ratings_filter = $( '[data-control="search_rating"]' ).ratings();
+    var ratings = $( '[data-control="search_rating"]' ).ratings();
     var stage = $( '[data-control="stage"]' ).stage();
     var feed = new Feed( tagd_js.rpc.feed );
     
@@ -360,10 +362,9 @@ jQuery( function( $ ) {
     );
     
     $( clear_btn ).click( function( e ) {
-        search_pills_container.empty();
-        search.val( '' ); 
-        ratings_filter.ratings( 'reset' );
-        unrated_filter.prop( 'checked', false );
+        search.autocomplete_pills( 'reset' );
+        ratings.ratings( 'reset' );
+        unrated.prop( 'checked', false );
     } );
 } );
 
