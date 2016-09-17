@@ -2,6 +2,10 @@
 
 namespace Tagd\Views;
 
+function context_wrapper( $view, $_view_path ) {
+    require_once( $_view_path );
+}
+
 class Base {
     public $args;
     
@@ -15,7 +19,7 @@ class Base {
             $view_path = realpath( sprintf( '%s/%s', $basedir, $this->args['view'] ) );
             
             if ( $basedir === substr( $view_path, 0, strlen( $basedir ) ) ) {
-                require_once( $view_path );
+                context_wrapper( $this, $view_path );
             }
         }
     }
