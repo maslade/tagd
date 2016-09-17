@@ -25,7 +25,7 @@ function load_frontend_controller( $filename ) {
 }
 
 class Loader {
-    static $controllers = array();
+    public static $controllers = array();
     
     public static function load_controller( $filename ) {
         $basedir = sprintf( '%s/controllers', PLUGIN_PATH );
