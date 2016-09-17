@@ -40,7 +40,7 @@ class RPC {
     
     public function tag_autocomplete() {
         $settings = new \Tagd\Models\Settings();
-        $search = wp_unslash( $_GET['tag'] );
+        $search = wp_unslash( $_GET['term'] );
         $args = array( 'name__like' => $search,
                        'hide_empty' => false,
                        'taxonomy' => $settings->item_taxonomy,

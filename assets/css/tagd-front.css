@@ -64,6 +64,10 @@ body {
     display: none !important;
 }
 
+.clickable {
+    cursor: pointer;
+}
+
 #browser {
     font-family: Lato;
     padding-top: 15px;

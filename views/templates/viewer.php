@@ -27,15 +27,15 @@ $view = new ViewerView();
                     <div class="row form-inline">
                         <div class="col-sm-12">
                             <ul class="search_rating" data-control="search_rating">
-                                <li class="glyphicon glyphicon-star"></li>
-                                <li class="glyphicon glyphicon-star"></li>
-                                <li class="glyphicon glyphicon-star"></li>
-                                <li class="glyphicon glyphicon-star-empty"></li>
-                                <li class="glyphicon glyphicon-star-empty"></li>
+                                <li class="glyphicon clickable"></li>
+                                <li class="glyphicon clickable"></li>
+                                <li class="glyphicon clickable"></li>
+                                <li class="glyphicon clickable"></li>
+                                <li class="glyphicon clickable"></li>
                             </ul>
                             <div class="form-group unrated">
                                 <label>
-                                    <input type="checkbox" class="form-control" />
+                                    <input type="checkbox" class="form-control" data-control="unrated" />
                                     Unrated
                                 </label>
                             </div>
@@ -56,7 +56,7 @@ $view = new ViewerView();
                     
                     <div class="row clear">
                         <div class="col-sm-12">
-                            <a href="clear" href="#" data-control="clear_btn">Clear</a>
+                            <a class="clear clickable" data-control="clear_btn">Clear</a>
                         </div>
                     </div>
                     
@@ -69,11 +69,11 @@ $view = new ViewerView();
                     <div class="row current_rating">
                         <div class="col-sm-12">
                             <ul data-control="current_rating">
-                                <li class="glyphicon glyphicon-star"></li>
-                                <li class="glyphicon glyphicon-star"></li>
-                                <li class="glyphicon glyphicon-star"></li>
-                                <li class="glyphicon glyphicon-star-empty"></li>
-                                <li class="glyphicon glyphicon-star-empty"></li>
+                                <li class="glyphicon clickable"></li>
+                                <li class="glyphicon clickable"></li>
+                                <li class="glyphicon clickable"></li>
+                                <li class="glyphicon clickable"></li>
+                                <li class="glyphicon clickable"></li>
                             </ul>
                         </div>
                     </div>
