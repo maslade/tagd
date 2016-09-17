@@ -393,7 +393,8 @@
         }
         
         function reset_multiple( items ) {
-            this.$except_title.show();
+            this.$except_title.hide();
+            this.$title.text( tagd_js.lang.showing_n_items.replace( '%d', items.length ) );
         }
     };
     

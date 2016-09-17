@@ -25,6 +25,7 @@ class Assets extends Base {
             ),
             'lang' => array(
                 'no_results' => __( 'No results.', 'tagd' ),
+                'showing_n_items' => __( 'Showing %d items', 'tagd' ),
             ),
         );
 
