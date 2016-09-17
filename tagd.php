@@ -18,8 +18,10 @@ const SCRIPT_TAGD = 'tagd_js';
 const STYLE_TAGD_FRONT_END = 'tagd_css';
 
 require_once __DIR__ . '/views/base.php';
+require_once __DIR__ . '/views/admin-settings.php';
 require_once __DIR__ . '/controllers/base.php';
+require_once __DIR__ . '/models/settings.php';
 require_once __DIR__ . '/lib/loader.php';
 
 load_controller( 'assets.php' );
-load_admin_controller( 'settings.php' );
+load_admin_controller( 'admin-settings.php' );

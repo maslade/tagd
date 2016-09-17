@@ -32,4 +32,21 @@ class Base {
         
         return $rendered;
     }
+    
+    protected function require_args() {
+        $args_list = func_get_args();
+        $missing = array();
+        
+        foreach ( $args_list as $arg ) {
+            if ( ! isset( $this->args[ $arg ] ) ) {
+                $missing[] = $arg;
+            }
+        }
+        
+        if ( $missing ) {
+            $message = sprintf( 'This view requires args: %s', implode( ',', $missing ) );
+            $function = sprintf( '%s::__construct', get_called_class() );
+            _doing_it_wrong( $function, $message, null );
+        }
+    }
 }

@@ -22,7 +22,7 @@ class Assets extends Base {
     
     protected function register_style( $handle, $stylesheet ) {
         if ( ! $stylesheet[ 'file' ] ) {
-            _doing_it_wrong( __FUNCTION__, '$stylesheet must include key "file"',  \Tagd\PLUGIN_VERSION );
+            _doing_it_wrong( __FUNCTION__, '$stylesheet must include key "file"', null );
         }
         
         $src = sprintf( '%s/%s', $this->plugin_url(), $stylesheet['file'] );
@@ -34,7 +34,7 @@ class Assets extends Base {
     
     protected function register_script( $handle, $script ) {
         if ( ! $script[ 'file' ] ) {
-            _doing_it_wrong( __FUNCTION__, '$script must include key "file"',  \Tagd\PLUGIN_VERSION );
+            _doing_it_wrong( __FUNCTION__, '$script must include key "file"', null );
         }
         
         $src = sprintf( '%s/%s', $this->plugin_url(), $script['file'] );
