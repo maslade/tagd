@@ -59,42 +59,57 @@ table {
 body {
     height: 100vh;
 }
+
+[data-template] {
+    display: none !important;
+}
+
 #browser {
     font-family: Lato;
     padding-top: 15px;
 }
+
 #browser .left_panel .row {
     margin-bottom: 8px;
 }
+
 #browser .search_rating, #browser .unrated {
     display: inline;
     font-size: 12px;
     padding-right: 5px;
 }
+
 #browser .search_pills li {
     padding: 0;
 }
+
 #browser .search_pills button {
     margin-bottom: 1px;
 }
+
 #browser .clear a {
     font-size: .7em;
     text-decoration: underline;
 }
+
 #browser .title {
     font-weight: bold;
 }
+
 #browser .current_rating {
     font-size: 14px;
 }
+
 #browser .details {
     font-size: 11px;
     font-weight: bold;
 }
+
 #browser .tags li {
     font-size: 13px;
     line-height: 20px;
 }
+
 #browser .tags .c {
     color: #a0a0a0;
     margin-left: 6px;

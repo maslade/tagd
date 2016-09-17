@@ -17,7 +17,7 @@ $view = new ViewerView();
                 <div class="left_panel col-sm-2">
                     <div class="row search">
                         <div class="col-sm-12 input-group input-group-sm">
-                          <input type="text" class="form-control" data-control="search" placeholder="Search..." />
+                          <input type="text" class="form-control" data-control="search" placeholder="Search..." autocomplete="off" />
                           <span class="input-group-btn">
                             <button class="btn btn-default" type="button">Go!</button>
                           </span>
@@ -26,7 +26,7 @@ $view = new ViewerView();
 
                     <div class="row form-inline">
                         <div class="col-sm-12">
-                            <ul class="search_rating" data-control="search_rating" data-control-mixin="ratings">
+                            <ul class="search_rating" data-control="search_rating">
                                 <li class="glyphicon glyphicon-star"></li>
                                 <li class="glyphicon glyphicon-star"></li>
                                 <li class="glyphicon glyphicon-star"></li>
@@ -45,17 +45,11 @@ $view = new ViewerView();
                     
                     <div class="row search_pills">
                         <ul class="col-sm-12 list-inline" data-control="search_pills">
-                            <li data-control data-control-mixin="pill">
-                                <button type="button" class="btn btn-primary btn-xs">porn </a><span class="glyphicon glyphicon-remove"></span></button>
-                            </li>
-                            <li data-control data-control-mixin="pill">
-                                <button type="button" class="btn btn-primary btn-xs">weird stuff with tentacles </a><span class="glyphicon glyphicon-remove"></span></button>
-                            </li>
-                            <li data-control data-control-mixin="pill">
-                                <button type="button" class="btn btn-primary btn-xs">butt stuff </a><span class="glyphicon glyphicon-remove"></span></button>
-                            </li>
-                            <li data-control data-control-mixin="pill">
-                                <button type="button" class="btn btn-warning btn-xs">bananas </a><span class="glyphicon glyphicon-remove"></span></button>
+                            <li class="pill" data-template="pill">
+                                <button type="button" class="btn btn-primary btn-xs">
+                                    <span data-template-tag="label"></span>
+                                    <span data-control="close" class="glyphicon glyphicon-remove"></span>
+                                </button>
                             </li>
                         </ul>
                     </div>
@@ -74,7 +68,7 @@ $view = new ViewerView();
                     
                     <div class="row current_rating">
                         <div class="col-sm-12">
-                            <ul data-control="current_rating" data-control-mixin="ratings">
+                            <ul data-control="current_rating">
                                 <li class="glyphicon glyphicon-star"></li>
                                 <li class="glyphicon glyphicon-star"></li>
                                 <li class="glyphicon glyphicon-star"></li>
@@ -86,10 +80,10 @@ $view = new ViewerView();
                     
                     <div class="row details">
                         <div class="col-sm-12">
-                            <div data-control="current_dimentions" data-control-mixin="label">800 x 600</div>
+                            <div data-control="current_dimentions">800 x 600</div>
                             <div>
                                 Posted on
-                                </a><span data-control="post_date" data-control-mixin="label">1/13/13</span>
+                                <span data-control="post_date">1/13/13</span>
                             </div>
                         </div>
                     </div>

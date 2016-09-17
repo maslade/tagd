@@ -5,6 +5,8 @@ namespace Tagd\Controllers;
 class RPC {
     public $public_endpoints = array( \Tagd\EP_TAG_AUTOCOMPLETE );
     
+    public $maximum_results = 15;
+    
     public function __construct() {
         add_action( 'init', array( $this, 'register_endpoints' ) );
     }
@@ -37,9 +39,30 @@ class RPC {
     }
     
     public function tag_autocomplete() {
+        $settings = new \Tagd\Models\Settings();
         $search = wp_unslash( $_GET['tag'] );
-        $suggestions = get_tag_regex( $search );
-        $args = array( 'name__like' => $search, 'hide_empty' => false, 'taxonomy' => 'post_tag' );
-        $this->send_json( get_terms( $args ) );
+        $args = array( 'name__like' => $search,
+                       'hide_empty' => false,
+                       'taxonomy' => $settings->item_taxonomy,
+                       'number' => $this->maximum_results,
+        );
+        
+        $terms = get_terms( $args );
+        usort( $terms, array( $this, 'sort_terms_by_count' ) );
+        
+        $suggestions = array();
+        
+        foreach ( $terms as $term ) {
+            $suggestions[] = array(
+                'label' => sprintf( '%s (%d)', $term->name, $term->count ),
+                'value' => $term->slug
+            );
+        }
+        
+        $this->send_json( $suggestions );
+    }
+    
+    public function sort_terms_by_count( $a, $b ) {
+        return (int) $b->count - (int) $a->count;
     }
 }
