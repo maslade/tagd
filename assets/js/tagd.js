@@ -456,6 +456,81 @@
     };
 } )( jQuery, window );
 
+// Pagination plugin.
+( function( $ ) {
+    NAMESPACE = 'pagination';
+    
+    function API( container, options ) {
+        this.$container = $( container );
+        this.options = $.extend( {}, API.options, typeof options === 'object' && options || {} );
+        this.init();
+    }
+    
+    API.options =
+        {
+        };
+    
+    API.prototype.init = function() {
+        this.$container.on( 'click', '[data-pagenum]', this.events.click_page );
+        this.reset();
+    };
+    
+    API.prototype.populate = function( pages, current_page ) {
+        pages = parseInt( pages );
+        current_page = parseInt( current_page ) || 1;
+        
+        var pagelink;
+        
+        for ( var i = 1; i <= parseInt( pages ); i++ ) {
+            pagelink = $( '<li>' ).prop( 'data-pagenum', i ).text( i );
+            if ( i == current_page ) {
+                pagelink.addClass( 'selected' );
+            }
+            this.$container.append( pagelink );
+        }
+    };
+    
+    API.prototype.reset = function() {
+        this.$container.empty();
+    };
+    
+    API.prototype.goto = function( pagenum ) {
+        $( '[data-pagenum]', this.$container ).removeClass( 'selected' );
+        $( '[data-pagenum=' + String( parseInt( pageNum ) ) + ']', this.$container ).addClass( 'selected' );
+        this.$container.trigger( 'page_change.tagd', [ this ] ); // TODO: all triggers should follow this pattern of passing along the API.
+    };
+    
+    API.prototype.events = {
+        'click_page': function( e ) {
+            e.preventDefault();
+            var $this = $( this );
+            var pagenum = $this.prop( 'data-pagenum' );
+            $this.pagination().goto( pagenum );
+        }
+    };
+    
+    function Plugin( options ) {
+        var api = this.data( NAMESPACE );
+        
+        if ( typeof options === 'undefined' ) {
+            return api;
+        }
+
+        return this.each( function() {
+            $( this ).data( NAMESPACE, api = new API( this, typeof options === 'object' ? options : {} ) );
+        } );
+    }
+    
+    var old = $.fn[ NAMESPACE ];
+
+    $.fn[ NAMESPACE ] = Plugin;
+    
+    $.fn[ NAMESPACE ].noConflict = function() {
+        $.fn[ NAMESPACE ] = old;
+        return this;
+    };
+} )( jQuery, window );
+
 // Feed.
 ( function( $, exports ) {
     function results_handler_wrapper( user_handler ) {
