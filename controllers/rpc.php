@@ -26,7 +26,6 @@ class RPC {
         'tags' => array(),
         'ratings' => null,
         'unrated' => false,
-        'randomize' => true,
     );
     
     public function __construct() {
@@ -85,11 +84,7 @@ class RPC {
                 )
             );
         }
-        
-        if  ( $filters['randomize'] ) {
-            $query_args['orderby'] = 'rand';
-        }
-
+ 
         $query = new \WP_Query( $query_args );
         
         $feed = array(
