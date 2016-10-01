@@ -22,7 +22,13 @@ class Item implements \JsonSerializable {
     public function tags() {
         $settings = new Settings();
         $terms = get_the_terms( $this->attachment, $settings->item_taxonomy );
-        return array_map( array( '\Tagd\Models\Tag', 'get' ), $terms );
+        return array_map( array( '\Tagd\Models\Tag', 'get' ), $terms ? $terms : array() );
+    }
+    
+    public static function add_tag( $term ) {
+        
+        $new_tag = new Tag( $tag );
+        $tags = $this->tags();
     }
     
     public function dimensions() {
@@ -31,17 +37,29 @@ class Item implements \JsonSerializable {
         return sprintf( $fmt, $info['width'], $info['height'] );
     }
     
+    public function filename() {
+        return basename( get_attached_file( $this->attachment->ID ) );
+    }
+    
     public function jsonSerialize() {
         return array(
             'id' => $this->attachment->ID,
             'tags' => $this->tags(),
             'date' => $this->attachment->post_date,
             'modified' => $this->attachment->post_modified,
-            'title' => $this->attachment->post_title,
-            'markup_full' => wp_get_attachment_image( $this->attachment->ID, 'full' ),
-            'markup_thumb' => wp_get_attachment_image( $this->attachment->ID, 'thumbnail' ),
-            'markup_pinky' => '',
+            'title' => $this->filename(),
+            'markup_full' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'full' ) ),
+            'markup_thumb' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'medium' ) ),
+            'markup_pinky' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'thumb' ) ),
             'dimensions' => $this->dimensions()
         );
+    }
+    
+    protected function size( $size ) {
+        switch ( $size ) {
+            case 'thumb':  return 'thumbnail';
+            case 'medium': return 'medium';
+            default:       return 'full';
+        }
     }
 }

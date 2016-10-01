@@ -10,13 +10,15 @@ class RPC {
     
     public $private_endpoints = array();
     
-    public $maximum_results = 15;
+    public $maximum_suggestions = 15;
     
     public $feed_args = array(
         'post_type' => 'attachment',
         'post_status' => 'inherit',
         'paged' => 1,
-        'posts_per_page' => 3,
+        'posts_per_page' => 10,
+        'orderby' => 'post_date',
+        'order' => 'desc',
     );
     
     public $feed_filters = array(
@@ -24,6 +26,7 @@ class RPC {
         'tags' => array(),
         'ratings' => null,
         'unrated' => false,
+        'randomize' => true,
     );
     
     public function __construct() {
@@ -68,19 +71,23 @@ class RPC {
         $user_filters = wp_unslash( isset( $_GET['filters'] ) ? $_GET['filters'] : array() );
         $filters = wp_parse_args( $user_filters, $this->feed_filters );
         
-        if ( is_string( $filters['tags'] ) ) {
-            $filters['tags'] = explode( ',', $filters['tags'] );
+        if ( ! is_array( $filters['tags'] ) ) {
+            $filters['tags'] = array();
         }
-        
         if ( $filters['tags'] ) {
+            $filters['tags'] = array_map( 'intval', $filters['tags'] );
             $query_args['tax_query'] = array(
                 array(
                     'taxonomy' => $settings->item_taxonomy,
                     'operator' => 'AND',
-                    'field' => 'slug',
+                    'field' => 'term_id',
                     'terms' => $filters['tags'],
                 )
             );
+        }
+        
+        if  ( $filters['randomize'] ) {
+            $query_args['orderby'] = 'rand';
         }
 
         $query = new \WP_Query( $query_args );
@@ -102,7 +109,7 @@ class RPC {
         $args = array( 'name__like' => $search,
                        'hide_empty' => false,
                        'taxonomy' => $settings->item_taxonomy,
-                       'number' => $this->maximum_results,
+                       'number' => $this->maximum_suggestions,
         );
         
         $terms = get_terms( $args );
@@ -114,7 +121,7 @@ class RPC {
         foreach ( $tags as $tag ) {
             $suggestions[] = array(
                 'label' => $tag->term->name,
-                'value' => $tag->term->slug
+                'value' => $tag->term->term_id
             );
         }
         

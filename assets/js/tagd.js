@@ -172,8 +172,7 @@
             }
         );
     
-        this.$search.keypress(
-        );
+        this.$search.keypress( this.events.keypress.bind( this ) );
 
         $( document.body ).on( 'click', '.pill button', { 'api': this }, function( e ) {
             e.preventDefault();
@@ -208,6 +207,15 @@
             this.$search.val( '' );
             this.$pills_container.append( make_pill.call( this, ui.item.value, ui.item.label ) );
             this.$search.trigger( 'change.tagd' );
+        },
+        
+        'keypress': function( e ) {
+            if ( e.which === 13 ) {
+                var search_str = this.$search.val();
+                this.$search.val( '' );
+                this.$pills_container.append( make_pill.call( this, search_str, search_str ) );
+                this.$search.trigger( 'change.tagd' );
+            }
         }
     };
     
@@ -272,7 +280,7 @@
         this.items = items = 'length' in items ? items : [ items ];
         
         if ( items.length === 0 ) {
-            this.items.show_none();
+            this.show_none();
         }
         
         if ( items.length === 1 ) {
@@ -286,6 +294,10 @@
         if ( changing ) {
             this.$container.trigger( 'change.tagd' );
         }
+    };
+    
+    API.prototype.back_button = function( previous ) {
+        
     };
     
     API.prototype.show_none = function() {
