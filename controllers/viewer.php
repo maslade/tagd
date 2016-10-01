@@ -37,6 +37,7 @@ class Viewer extends Base {
             
             wp_enqueue_script( \Tagd\SCRIPT_TAGD );
             wp_enqueue_script( \Tagd\SCRIPT_BOOTSTRAP );
+            wp_enqueue_script( \Tagd\SCRIPT_MASONRY );
             wp_enqueue_style( \Tagd\STYLE_TAGD_FRONT_END );
             wp_enqueue_style( \Tagd\STYLE_BOOTSTRAP );
         }

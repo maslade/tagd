@@ -16,7 +16,7 @@ class RPC {
         'post_type' => 'attachment',
         'post_status' => 'inherit',
         'paged' => 1,
-        'posts_per_page' => 10,
+        'posts_per_page' => 30,
         'orderby' => 'post_date',
         'order' => 'desc',
     );

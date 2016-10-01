@@ -99,7 +99,7 @@ $view = new ViewerView();
                     <div class="stage" data-control="stage">
                     </div>
                     
-                    <div class="pagination" data-control="pagination"></div>
+                    <ul class="pagination" data-control="pagination"></ul>
                 </div>
             </div>
         </div>

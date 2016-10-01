@@ -293,18 +293,31 @@
     };
     
     API.prototype.show_single = function( item ) {
-        $( item.markup_full ).data( 'item.tagd', item )
-                             .appendTo( this.$container );
+        this.$container.append(
+            $( item.markup_full ).data( 'item.tagd', item )
+        );
     };
     
     API.prototype.show_multiple = function( items ) {
         var item;
+        var masonry_wrapper = $( '<div class="masonry">' );
+        
         for ( var i = 0; i < items.length; i++ ) {
             item = $( items[ i ].markup_thumb )
                    .data( 'item.tagd', items[ i ] )
                    .on( 'click', { 'api': this }, click );
-            this.$container.append( item );
+            masonry_wrapper.append( $( '<div class="grid-item">' ).append( item ) );
         }
+        
+        this.$container.append( masonry_wrapper );
+        
+        var images = $( 'img', masonry_wrapper ), loaded = 0;
+        $( 'img', masonry_wrapper ).on( 'load', function() {
+            loaded++;
+            if ( loaded === images.length ) {
+                masonry_wrapper.masonry();
+            }
+        } );
         
         function click( e ) {
             e.data.api.show( $( this ).data( 'item.tagd' ) );
@@ -473,9 +486,9 @@
         var pagelink;
         
         for ( var i = 1; i <= parseInt( pages ); i++ ) {
-            pagelink = $( '<li>' ).attr( 'data-pagenum', i ).text( i );
+            pagelink = $( '<li>' ).attr( 'data-pagenum', i ).append( $( '<a>' ).text( i ) );
             if ( i == current_page ) {
-                pagelink.addClass( 'selected' );
+                pagelink.addClass( 'active' );
             }
             this.$container.append( pagelink );
         }
@@ -483,20 +496,23 @@
     
     API.prototype.reset = function() {
         this.$container.empty();
+        return this;
     };
     
     API.prototype.goto = function( pagenum ) {
         this.select_page( pagenum );
         this.$container.trigger( 'page_change.tagd', [ this ] ); // TODO: all triggers should follow this pattern of passing along the API.
+        return this;
     };
     
     API.prototype.select_page = function( pagenum ) {
-        $( '[data-pagenum]', this.$container ).removeClass( 'selected' );
-        $( '[data-pagenum=' + String( parseInt( pagenum ) ) + ']', this.$container ).addClass( 'selected' );
+        $( '[data-pagenum]', this.$container ).removeClass( 'active' );
+        $( '[data-pagenum=' + String( parseInt( pagenum ) ) + ']', this.$container ).addClass( 'active' );
+        return this;
     };
     
     API.prototype.get_page = function() {
-        return parseInt( $( '.selected[data-pagenum]' ).text() );
+        return parseInt( $( '.active[data-pagenum]' ).attr( 'data-pagenum' ) );
     };
     
     API.prototype.events = {
@@ -587,7 +603,7 @@
     Feed.prototype.refresh = function( args ) {
         this.update_filters( args );
         this.fetch( function( results ) {
-            $( '[data-control="stage"]' ).stage( 'show', results.items );
+            $( this ).trigger( 'results.tagd', [ results ] );
         } );
     }
 
@@ -628,7 +644,8 @@
         return {
             'tags': this.$search.autocomplete_pills( 'api' ).get(),
             'unrated': this.$unrated_cb.prop( 'checked' ),
-            'ratings': this.$ratings.ratings( 'api' ).get()
+            'ratings': this.$ratings.ratings( 'api' ).get(),
+            'page': this.$pagination.pagination( 'api' ).get_page() || 1
         };
     };
     
@@ -663,6 +680,11 @@ jQuery( function( $ ) {
     
     $( '[data-control="stage"]' ).on( 'change.tagd', function( e, items ) {
         $( '[data-control="meta_panel"]' ).meta_panel( 'update', items );
+    } );
+    
+    $( feed ).on( 'results.tagd', function( e, results ) {
+        $( '[data-control="stage"]' ).stage( 'show', results.items );
+        $( '[data-control="pagination"]' ).pagination( 'api' ).reset().populate( results.total_pages, results.page );
     } );
     
     $( '[data-control="clear_btn"]' ).click( function( e ) {
