@@ -34,7 +34,7 @@ class Tag implements \JsonSerializable {
     public function jsonSerialize() {
         return array(
             'name' => $this->term->name,
-            'slug' => $this->term->slug,
+            'id' => $this->term->term_id,
             'label' => $this->label(),
             'count' => $this->term->count,
             'desc' => $this->term->description,

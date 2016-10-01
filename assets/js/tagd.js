@@ -172,9 +172,7 @@
             }
         );
     
-        this.$search.keypress( this.events.keypress.bind( this ) );
-
-        $( document.body ).on( 'click', '.pill button', { 'api': this }, function( e ) {
+        this.$pills_container.on( 'click', '.pill button', { 'api': this }, function( e ) {
             e.preventDefault();
             $( this ).parents( '.pill:first' ).remove();
             e.data.api.$search.trigger( 'change.tagd' );
@@ -205,17 +203,7 @@
         'select_suggestion': function( e, ui ) {
             e.preventDefault();
             this.$search.val( '' );
-            this.$pills_container.append( make_pill.call( this, ui.item.value, ui.item.label ) );
-            this.$search.trigger( 'change.tagd' );
-        },
-        
-        'keypress': function( e ) {
-            if ( e.which === 13 ) {
-                var search_str = this.$search.val();
-                this.$search.val( '' );
-                this.$pills_container.append( make_pill.call( this, search_str, search_str ) );
-                this.$search.trigger( 'change.tagd' );
-            }
+            this.add_pill( ui.item.value, ui.item.label );
         }
     };
     
@@ -292,7 +280,7 @@
         }
         
         if ( changing ) {
-            this.$container.trigger( 'change.tagd' );
+            this.$container.trigger( 'change.tagd', [ items ] );
         }
     };
     
@@ -374,7 +362,9 @@
         this.$date = $( '[data-control="post_date"]', this.$container );
         this.$tags = $( '[data-control="tags"]', this.$container );
         this.$except_title = $( [ this.$dimensions, this.$date, this.$tags ] );
-        this.$tags.on( 'click', 'li', function() { tagd( 'filter' ).add_tag( $( this ).data( 'tag.tagd' ) ); } );
+        this.$tags.on( 'click', 'li', function() {
+            tagd( 'filter' ).add_tag( $( this ).data( 'tag.tagd' ) );
+        } );
     };
     
     API.prototype.reset = function() {
@@ -471,7 +461,7 @@
         };
     
     API.prototype.init = function() {
-        this.$container.on( 'click', '[data-pagenum]', this.events.click_page );
+        this.$container.on( 'click', '[data-pagenum]', { 'api': this }, this.events.click_page );
         this.reset();
     };
     
@@ -482,7 +472,7 @@
         var pagelink;
         
         for ( var i = 1; i <= parseInt( pages ); i++ ) {
-            pagelink = $( '<li>' ).prop( 'data-pagenum', i ).text( i );
+            pagelink = $( '<li>' ).attr( 'data-pagenum', i ).text( i );
             if ( i == current_page ) {
                 pagelink.addClass( 'selected' );
             }
@@ -496,7 +486,7 @@
     
     API.prototype.goto = function( pagenum ) {
         $( '[data-pagenum]', this.$container ).removeClass( 'selected' );
-        $( '[data-pagenum=' + String( parseInt( pageNum ) ) + ']', this.$container ).addClass( 'selected' );
+        $( '[data-pagenum=' + String( parseInt( pagenum ) ) + ']', this.$container ).addClass( 'selected' );
         this.$container.trigger( 'page_change.tagd', [ this ] ); // TODO: all triggers should follow this pattern of passing along the API.
     };
     
@@ -504,21 +494,29 @@
         'click_page': function( e ) {
             e.preventDefault();
             var $this = $( this );
-            var pagenum = $this.prop( 'data-pagenum' );
-            $this.pagination().goto( pagenum );
+            var pagenum = $this.attr( 'data-pagenum' );
+            e.data.api.goto( pagenum );
         }
     };
     
     function Plugin( options ) {
-        var api = this.data( NAMESPACE );
-        
-        if ( typeof options === 'undefined' ) {
-            return api;
+        if ( options === 'api' ) {
+            return this.data( NAMESPACE );
         }
-
-        return this.each( function() {
-            $( this ).data( NAMESPACE, api = new API( this, typeof options === 'object' ? options : {} ) );
-        } );
+        
+        var action = typeof options === 'string' ? options : '';
+        var options = typeof options === 'object' ? options : {};
+        var args = Array.prototype.slice.call( arguments, 1 );
+        
+        return this.each(
+            function() {
+                var $this = $(this);
+                var api = $this.data( NAMESPACE );
+                if ( action && ! api ) return;
+                if ( ! api )           $this.data( NAMESPACE, api = new API( this, options ) );
+                if ( action )          api[ action ].apply( api, args );
+            }
+        );
     }
     
     var old = $.fn[ NAMESPACE ];
@@ -609,7 +607,7 @@
     };
     
     FilterController.prototype.add_tag = function( tag ) {
-        this.$search.autocomplete_pills( 'add_pill', tag.slug, tag.name );
+        this.$search.autocomplete_pills( 'add_pill', tag.id, tag.name );
     };
     
     FilterController.prototype.extract = function() {
@@ -625,31 +623,46 @@
 
 // Front-end glue.
 jQuery( function( $ ) {
-    var clear_btn = $( '[data-control="clear_btn"]' );
-    var unrated = $( '[data-control="unrated"]' );
-    var meta = $( '.left_panel' ).meta_panel();
-    var search = $( '[data-control="search"]' ).autocomplete_pills(
+    $( '[data-control="meta_panel"]' ).meta_panel();
+    $( '[data-control="search_rating"]' ).ratings();
+    $( '[data-control="stage"]' ).stage();
+    $( '[data-control="pagination"]' ).pagination();
+    $( '[data-control="go_btn"]' ).click( refresh );
+    $( '[data-control="search"]' ).autocomplete_pills(
         {
             'autocomplete_url':  tagd_js.rpc.tag_autocomplete,
             'pill_container':    '[data-control="search_pills"]'
         }
     );
-    var ratings = $( '[data-control="search_rating"]' ).ratings();
-    var stage = $( '[data-control="stage"]' ).stage();
+    
     var feed = new Feed( tagd_js.rpc.feed );
     var filters = new FilterController(
         {
-            'search':      search,
-            'unrated_cb':  unrated,
-            'ratings':     ratings
+            'search':      $( '[data-control="search"]' ),
+            'unrated_cb':  $( '[data-control="unrated"]' ),
+            'ratings':     $( '[data-control="search_rating"]' )
         }
     );
 
-    var go_btn = $( '[data-control="go_btn"]' ).click( refresh );
     $( filters ).on( 'change.tagd', maybe_refresh );
-    $( stage ).on( 'change.tagd', function() {
-        meta.meta_panel( 'update', stage.stage( 'api' ).items );
+    $( '[data-control="stage"]' ).on( 'change.tagd', function( e, items ) {
+        $( '[data-control="meta_panel"]' ).meta_panel( 'update', items );
     } );
+    
+    $( '[data-control="clear_btn"]' ).click( function( e ) {
+        $( '[data-control="search"]' ).autocomplete_pills( 'reset' );
+        $( '[data-control="search_rating"]' ).ratings( 'reset' );
+        $( '[data-control="unrated"]' ).prop( 'checked', false );
+    } );
+    
+    $( document ).data( 'tagd',
+        {
+            'feed': feed,
+            'filter': filters
+        }
+    );
+    
+    refresh();
     
     function maybe_refresh() {
         if ( ! feed.current_request ) {
@@ -661,25 +674,9 @@ jQuery( function( $ ) {
         var filter_args = filters.extract();
         feed.update_filters( filter_args );
         feed.fetch( function( results ) {
-            stage.stage( 'show', results.items );
+            $( '[data-control="stage"]' ).stage( 'show', results.items );
         } );
     }
-    
-    $( document ).data( 'tagd',
-        {
-            'feed': feed,
-            'filter': filters
-        }
-    );
-    
-    $( clear_btn ).click( function( e ) {
-        search.autocomplete_pills( 'reset' );
-        ratings.ratings( 'reset' );
-        unrated.prop( 'checked', false );
-    } );
-    
-    
-    refresh();
 } );
 
 function tagd( yarr_matey ) {

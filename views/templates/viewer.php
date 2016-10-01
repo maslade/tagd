@@ -14,7 +14,7 @@ $view = new ViewerView();
     <body>
         <div id="browser" class="container-fluid">
             <div class="row">
-                <div class="left_panel col-xs-2">
+                <div class="left_panel col-xs-2" data-control="meta_panel">
                     <div class="row search">
                         <div class="col-sm-12 input-group input-group-sm">
                           <input type="text" class="form-control" data-control="search" placeholder="Search..." autocomplete="off" />
@@ -95,8 +95,11 @@ $view = new ViewerView();
                         </div>
                     </div>
                 </div>
-                <div class="stage col-xs-10" data-control="stage">
+                <div class="col-xs-10">
+                    <div class="stage" data-control="stage">
+                    </div>
                     
+                    <div class="pagination" data-control="pagination"></div>
                 </div>
             </div>
         </div>
