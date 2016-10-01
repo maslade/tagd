@@ -22,7 +22,7 @@ class RPC {
     );
     
     public $feed_filters = array(
-        'page' => 0,
+        'page' => 1,
         'tags' => array(),
         'ratings' => null,
         'unrated' => false,
@@ -84,14 +84,16 @@ class RPC {
                 )
             );
         }
+        
+        $query_args['paged'] = (int) $filters['page'];
  
         $query = new \WP_Query( $query_args );
         
         $feed = array(
             'items' => array_map( array( '\Tagd\Models\Item', 'get' ), $query->posts ),
-            'filters' => $filters,
+            'request' => $filters,
             'total_items' => $query->post_count,
-            'page' => $query->paged,
+            'page' => $query_args['paged'],
             'total_pages' => $query->max_num_pages,
         );
         

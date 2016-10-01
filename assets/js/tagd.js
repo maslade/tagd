@@ -358,12 +358,14 @@
     API.prototype.init = function() {
         this.items = [];
         this.$title = $( '[data-control="current_title"]', this.$container );
+        this.$search = $( '[data-control="search"]' );
         this.$dimensions = $( '[data-control="current_dimensions"]', this.$container );
         this.$date = $( '[data-control="post_date"]', this.$container );
         this.$tags = $( '[data-control="tags"]', this.$container );
         this.$except_title = $( [ this.$dimensions, this.$date, this.$tags ] );
-        this.$tags.on( 'click', 'li', function() {
-            tagd( 'filter' ).add_tag( $( this ).data( 'tag.tagd' ) );
+        this.$tags.on( 'click', 'li', { 'api': this }, function( e ) {
+            var tag = $( this ).data( 'tag.tagd' );
+            e.data.api.$search.autocomplete_pills( 'add_pill', tag.id, tag.name );
         } );
     };
     
@@ -379,8 +381,7 @@
         if ( this.items.length > 1 ) {
             reset_multiple.call( this, this.items );
         }
-        
-        // I think these are less useful so I'm leaving them private.
+
         function reset_none() {
             this.$except_title.hide();
             this.$title.text( tagd_js.lang.no_results ).hide();
@@ -485,9 +486,17 @@
     };
     
     API.prototype.goto = function( pagenum ) {
+        this.select_page( pagenum );
+        this.$container.trigger( 'page_change.tagd', [ this ] ); // TODO: all triggers should follow this pattern of passing along the API.
+    };
+    
+    API.prototype.select_page = function( pagenum ) {
         $( '[data-pagenum]', this.$container ).removeClass( 'selected' );
         $( '[data-pagenum=' + String( parseInt( pagenum ) ) + ']', this.$container ).addClass( 'selected' );
-        this.$container.trigger( 'page_change.tagd', [ this ] ); // TODO: all triggers should follow this pattern of passing along the API.
+    };
+    
+    API.prototype.get_page = function() {
+        return parseInt( $( '.selected[data-pagenum]' ).text() );
     };
     
     API.prototype.events = {
@@ -575,6 +584,13 @@
     
     Feed.prototype.is_loading = function() { return Boolean( this.current_request ); }
     
+    Feed.prototype.refresh = function( args ) {
+        this.update_filters( args );
+        this.fetch( function( results ) {
+            $( '[data-control="stage"]' ).stage( 'show', results.items );
+        } );
+    }
+
     exports.Feed = Feed;
 } )( jQuery, window );
 
@@ -588,26 +604,24 @@
     FilterController.options = {
         'search': null,
         'unrated_cb': null,
-        'ratings': null
+        'ratings': null,
+        'pagination': null,
     };
     
     FilterController.prototype.init = function() {
         this.$search = $( this.options.search );
         this.$unrated_cb = $( this.options.unrated_cb );
         this.$ratings = $( this.options.ratings );
-        
+        this.$pagination = $( this.options.pagination );
         
         this.$search.on( 'change.tagd', this.change.bind( this ) )
         this.$unrated_cb.click( this.change.bind( this ) );
         this.$ratings.on( 'change.tagd', this.change.bind( this ) );
+        this.$pagination.on( 'page_change.tagd', this.change.bind( this ) );
     };
     
     FilterController.prototype.change = function( e ) {
         $( this ).trigger( 'change.tagd' )
-    };
-    
-    FilterController.prototype.add_tag = function( tag ) {
-        this.$search.autocomplete_pills( 'add_pill', tag.id, tag.name );
     };
     
     FilterController.prototype.extract = function() {
@@ -623,6 +637,16 @@
 
 // Front-end glue.
 jQuery( function( $ ) {
+    var feed = new Feed( tagd_js.rpc.feed );
+    var filters = new FilterController(
+        {
+            'search':      $( '[data-control="search"]' ),
+            'unrated_cb':  $( '[data-control="unrated"]' ),
+            'ratings':     $( '[data-control="search_rating"]' ),
+            'pagination':  $( '[data-control="pagination"]' )
+        }
+    );
+
     $( '[data-control="meta_panel"]' ).meta_panel();
     $( '[data-control="search_rating"]' ).ratings();
     $( '[data-control="stage"]' ).stage();
@@ -635,16 +659,8 @@ jQuery( function( $ ) {
         }
     );
     
-    var feed = new Feed( tagd_js.rpc.feed );
-    var filters = new FilterController(
-        {
-            'search':      $( '[data-control="search"]' ),
-            'unrated_cb':  $( '[data-control="unrated"]' ),
-            'ratings':     $( '[data-control="search_rating"]' )
-        }
-    );
-
-    $( filters ).on( 'change.tagd', maybe_refresh );
+    $( filters ).on( 'change.tagd', refresh );
+    
     $( '[data-control="stage"]' ).on( 'change.tagd', function( e, items ) {
         $( '[data-control="meta_panel"]' ).meta_panel( 'update', items );
     } );
@@ -664,18 +680,9 @@ jQuery( function( $ ) {
     
     refresh();
     
-    function maybe_refresh() {
-        if ( ! feed.current_request ) {
-            refresh();
-        }
-    }
-    
     function refresh() {
-        var filter_args = filters.extract();
-        feed.update_filters( filter_args );
-        feed.fetch( function( results ) {
-            $( '[data-control="stage"]' ).stage( 'show', results.items );
-        } );
+        var args = filters.extract();
+        feed.refresh( args );
     }
 } );
 
