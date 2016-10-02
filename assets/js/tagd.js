@@ -443,100 +443,6 @@
     };
 } )( jQuery, window );
 
-// Pagination plugin.
-( function( $ ) {
-    NAMESPACE = 'pagination';
-    
-    function API( container, options ) {
-        this.$container = $( container );
-        this.options = $.extend( {}, API.options, typeof options === 'object' && options || {} );
-        this.init();
-    }
-    
-    API.options =
-        {
-        };
-    
-    API.prototype.init = function() {
-        this.$container.on( 'click', '[data-pagenum]', { 'api': this }, this.events.click_page );
-        this.reset();
-    };
-    
-    API.prototype.populate = function( pages, current_page ) {
-        pages = parseInt( pages );
-        current_page = parseInt( current_page ) || 1;
-        
-        var pagelink;
-        
-        for ( var i = 1; i <= parseInt( pages ); i++ ) {
-            pagelink = $( '<li>' ).attr( 'data-pagenum', i ).append( $( '<a>' ).text( i ) );
-            if ( i == current_page ) {
-                pagelink.addClass( 'active' );
-            }
-            this.$container.append( pagelink );
-        }
-    };
-    
-    API.prototype.reset = function() {
-        this.$container.empty();
-        return this;
-    };
-    
-    API.prototype.goto = function( pagenum ) {
-        this.select_page( pagenum );
-        this.$container.trigger( 'page_change.tagd', [ this ] ); // TODO: all triggers should follow this pattern of passing along the API.
-        return this;
-    };
-    
-    API.prototype.select_page = function( pagenum ) {
-        $( '[data-pagenum]', this.$container ).removeClass( 'active' );
-        $( '[data-pagenum=' + String( parseInt( pagenum ) ) + ']', this.$container ).addClass( 'active' );
-        return this;
-    };
-    
-    API.prototype.get_page = function() {
-        return parseInt( $( '.active[data-pagenum]' ).attr( 'data-pagenum' ) );
-    };
-    
-    API.prototype.events = {
-        'click_page': function( e ) {
-            e.preventDefault();
-            var $this = $( this );
-            var pagenum = $this.attr( 'data-pagenum' );
-            e.data.api.goto( pagenum );
-        }
-    };
-    
-    function Plugin( options ) {
-        if ( options === 'api' ) {
-            return this.data( NAMESPACE );
-        }
-        
-        var action = typeof options === 'string' ? options : '';
-        var options = typeof options === 'object' ? options : {};
-        var args = Array.prototype.slice.call( arguments, 1 );
-        
-        return this.each(
-            function() {
-                var $this = $(this);
-                var api = $this.data( NAMESPACE );
-                if ( action && ! api ) return;
-                if ( ! api )           $this.data( NAMESPACE, api = new API( this, options ) );
-                if ( action )          api[ action ].apply( api, args );
-            }
-        );
-    }
-    
-    var old = $.fn[ NAMESPACE ];
-
-    $.fn[ NAMESPACE ] = Plugin;
-    
-    $.fn[ NAMESPACE ].noConflict = function() {
-        $.fn[ NAMESPACE ] = old;
-        return this;
-    };
-} )( jQuery, window );
-
 // Feed.
 ( function( $, exports ) {
     function results_handler_wrapper( user_handler ) {
@@ -603,20 +509,17 @@
     FilterController.options = {
         'search': null,
         'unrated_cb': null,
-        'ratings': null,
-        'pagination': null,
+        'ratings': null
     };
     
     FilterController.prototype.init = function() {
         this.$search = $( this.options.search );
         this.$unrated_cb = $( this.options.unrated_cb );
         this.$ratings = $( this.options.ratings );
-        this.$pagination = $( this.options.pagination );
         
         this.$search.on( 'change.tagd', this.change.bind( this ) )
         this.$unrated_cb.click( this.change.bind( this ) );
         this.$ratings.on( 'change.tagd', this.change.bind( this ) );
-        this.$pagination.on( 'page_change.tagd', this.change.bind( this ) );
     };
     
     FilterController.prototype.change = function( e ) {
@@ -628,7 +531,6 @@
             'tags': this.$search.autocomplete_pills( 'api' ).get(),
             'unrated': this.$unrated_cb.prop( 'checked' ),
             'ratings': this.$ratings.ratings( 'api' ).get(),
-            'page': this.$pagination.pagination( 'api' ).get_page() || 1
         };
     };
     
@@ -643,14 +545,12 @@ jQuery( function( $ ) {
             'search':      $( '[data-control="search"]' ),
             'unrated_cb':  $( '[data-control="unrated"]' ),
             'ratings':     $( '[data-control="search_rating"]' ),
-            'pagination':  $( '[data-control="pagination"]' )
         }
     );
 
     $( '[data-control="meta_panel"]' ).meta_panel();
     $( '[data-control="search_rating"]' ).ratings();
     $( '[data-control="stage"]' ).stage();
-    $( '[data-control="pagination"]' ).pagination();
     $( '[data-control="go_btn"]' ).click( refresh );
     $( '[data-control="search"]' ).autocomplete_pills(
         {
@@ -667,7 +567,6 @@ jQuery( function( $ ) {
     
     $( feed ).on( 'results.tagd', function( e, results ) {
         $( '[data-control="stage"]' ).stage( 'ondeck', results.items ).stage( 'show_index', 0 );
-        $( '[data-control="pagination"]' ).pagination( 'api' ).reset().populate( results.total_pages, results.page );
     } );
     
     $( '[data-control="clear_btn"]' ).click( function( e ) {
