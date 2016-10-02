@@ -137,3 +137,18 @@ body {
     font-size: 1.1em;
     opacity: 1;
 }
+
+#browser .ondeck {
+    margin-right: 25px;
+}
+
+#browser .ondeck li {
+	margin-bottom: 0px;
+	border: 4px solid black;
+	border-bottom-width: 1px;
+	border-top-width: 1px;
+}
+
+#browser .stage {
+    
+}

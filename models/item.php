@@ -57,7 +57,7 @@ class Item implements \JsonSerializable {
     
     protected function size( $size ) {
         switch ( $size ) {
-            case 'thumb':  return 'thumbnail';
+            case 'thumb':  return \Tagd\IMG_PINKY;
             case 'medium': return 'medium';
             default:       return 'full';
         }

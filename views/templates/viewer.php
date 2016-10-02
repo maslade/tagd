@@ -96,10 +96,9 @@ $view = new ViewerView();
                     </div>
                 </div>
                 <div class="col-xs-10">
+                    <ul class="ondeck pull-left" data-control="ondeck"></ul>
                     <div class="stage" data-control="stage">
                     </div>
-                    
-                    <ul class="pagination" data-control="pagination"></ul>
                 </div>
             </div>
         </div>

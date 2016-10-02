@@ -249,9 +249,11 @@
     
     API.options =
         {
+            'ondeck': '[data-control="ondeck"]'
         };
     
     API.prototype.init = function() {
+        this.$ondeck = $( this.options.ondeck );
         this.reset();
     };
     
@@ -260,27 +262,18 @@
         this.$container.empty();
     };
     
-    API.prototype.show = function( items ) {
-        this.$container.empty();
-        
+    API.prototype.ondeck = function( items ) {
         var changing = items != this.items;
         
-        this.items = items = 'length' in items ? items : [ items ];
-        
-        if ( items.length === 0 ) {
-            this.show_none();
-        }
-        
-        if ( items.length === 1 ) {
-            this.show_single( this.items[0] );
-        }
-        
-        if ( items.length > 1 ) {
-            this.show_multiple( this.items );
-        }
-        
         if ( changing ) {
-            this.$container.trigger( 'change.tagd', [ items ] );
+            this.items = items;
+            this.$ondeck.empty();
+            $.each( items, add.bind( this ) );
+            this.$container.trigger( 'ondeck.tagd', [ items ] );
+        }
+        
+        function add( i, val ) {
+            this.$ondeck.append( $( '<li>' ).append( val.markup_pinky ).data( 'item.tagd', val ) );
         }
     };
     
@@ -288,36 +281,26 @@
         
     };
     
-    API.prototype.show_none = function() {
-        alert( 'no results - todo' );
+    API.prototype.show_index = function( index ) {
+        this.show_item( this.items[ index ] );
     };
     
-    API.prototype.show_single = function( item ) {
+    API.prototype.show_item = function( item ) {
         this.$container.append(
             $( item.markup_full ).data( 'item.tagd', item )
         );
+        this.$container.trigger( 'show_item', [ item ] );
     };
     
     API.prototype.show_multiple = function( items ) {
         var item;
-        var masonry_wrapper = $( '<div class="masonry">' );
         
         for ( var i = 0; i < items.length; i++ ) {
             item = $( items[ i ].markup_thumb )
                    .data( 'item.tagd', items[ i ] )
                    .on( 'click', { 'api': this }, click );
-            masonry_wrapper.append( $( '<div class="grid-item">' ).append( item ) );
+            this.$container.append( $( '<div>' ).append( item ) );
         }
-        
-        this.$container.append( masonry_wrapper );
-        
-        var images = $( 'img', masonry_wrapper ), loaded = 0;
-        $( 'img', masonry_wrapper ).on( 'load', function() {
-            loaded++;
-            if ( loaded === images.length ) {
-                masonry_wrapper.masonry();
-            }
-        } );
         
         function click( e ) {
             e.data.api.show( $( this ).data( 'item.tagd' ) );
@@ -678,12 +661,12 @@ jQuery( function( $ ) {
     
     $( filters ).on( 'change.tagd', refresh );
     
-    $( '[data-control="stage"]' ).on( 'change.tagd', function( e, items ) {
+    $( '[data-control="stage"]' ).on( 'show_item.tagd', function( e, items ) {
         $( '[data-control="meta_panel"]' ).meta_panel( 'update', items );
     } );
     
     $( feed ).on( 'results.tagd', function( e, results ) {
-        $( '[data-control="stage"]' ).stage( 'show', results.items );
+        $( '[data-control="stage"]' ).stage( 'ondeck', results.items ).stage( 'show_index', 0 );
         $( '[data-control="pagination"]' ).pagination( 'api' ).reset().populate( results.total_pages, results.page );
     } );
     
