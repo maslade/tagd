@@ -15,6 +15,7 @@ const PLUGIN_VERSION = '0.0.1';
 
 const EP_FEED = 'tagd_feed';
 const EP_TAG_AUTOCOMPLETE = 'tagd_autocomplete';
+const EP_UPDATE = 'tagd_update';
 
 const SCRIPT_TAGD = 'tagd_js';
 const SCRIPT_BOOTSTRAP = 'tagd_bootstrap_js';

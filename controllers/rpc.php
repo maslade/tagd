@@ -5,7 +5,8 @@ namespace Tagd\Controllers;
 class RPC {
     public $public_endpoints = array(
         \Tagd\EP_TAG_AUTOCOMPLETE,
-        \Tagd\EP_FEED
+        \Tagd\EP_FEED,
+        \Tagd\EP_UPDATE,
     );
     
     public $private_endpoints = array();
@@ -52,6 +53,10 @@ class RPC {
             
             case \Tagd\EP_FEED:
                 $this->feed();
+                break;
+            
+            case \Tagd\EP_UPDATE:
+                $this->update();
                 break;
         }
         
@@ -123,6 +128,46 @@ class RPC {
         }
         
         $this->send_json( $suggestions );
+    }
+    
+    protected function update() {
+        $item_id = isset( $_POST['id'] ) ? (int) $_POST['id'] : false;
+        
+        if ( ! $item_id ) {
+            $this->send_json( false );
+            return;
+        }
+        
+        $rating = isset( $_POST['rating'] ) ? wp_unslash( $_POST['rating'] ) : false;
+        $new_tag_id = isset( $_POST['new_tag_id'] ) ? (int) $_POST['new_tag_id'] : false;
+        $new_tag_str = isset( $_POST['new_tag_str'] ) ? wp_unslash( $_POST['new_tag_str'] ) : false;
+        $remove_tag_id = isset( $_POST['remove_tag_id'] ) ? (int) $_POST['remove_tag_id'] : false;
+
+        $item = new \Tagd\Models\Item( $item_id );
+        $response = array();
+        
+        if ( $rating ) {
+            $item->rate( $rating );
+            $response[ 'new_rating' ] = $rating;
+        }
+        
+        if ( $new_tag_str ) {
+            $tag = \Tagd\Models\Tag::get_or_make( $new_tag_str );
+            $new_tag_id = $tag->term->term_id;
+        }
+        
+        if ( $new_tag_id ) {
+            $tag = new \Tagd\Models\Tag( $new_tag_id );
+            $response[ 'new_tag' ] = $tag;
+        }
+        
+        if ( $remove_tag_id ) {
+            $item->remove_tag( $remove_tag_id );
+            $tag = new \Tagd\Models\Tag( $remove_tag_id );
+            $response[ 'removed_tag' ] = $tag;
+        }
+        
+        $this->send_json( $response );
     }
     
     protected function sort_terms_by_count( $a, $b ) {

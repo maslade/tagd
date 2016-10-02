@@ -55,10 +55,24 @@
             : is_on.call( this, i );
     };
     
+    API.prototype.get_highest = function( i ) {
+        for ( var i = this.stars().length - 1; i >= 0; i-- ) {
+            if ( is_on.call( this, i ) ) {
+                return i + 1;
+            }
+        }
+    };
+    
     API.prototype.set = function( i, val ) {
         if ( typeof i === 'object' && 'length' in i ) {
+            // set( [1, 0, 1, 0, 1] )
             $.each( i, set.bind( this ) );
+        } else if ( typeof val === 'undefined' ) {
+            // set( 3 ), same as set( [ 1, 1, 1, 0, 0 ] )
+            this.set_all( 0 );
+            $.each( new Array( parseInt( i ) ).fill( 1 ), set.bind( this ) );
         } else {
+            // set( 3, 1 ), turns on star #3
             set.call( this, i, val );
         }
     };
@@ -79,7 +93,7 @@
     };
     
     API.prototype.change = function() {
-        do_event.call( this, 'change' );
+        do_event.call( this, 'change', this );
     };
     
     API.prototype.events = {
@@ -322,6 +336,7 @@
     API.prototype.show_item = function( item ) {
         this.$container.empty().append(
             $( item.markup_full ).data( 'item.tagd', item )
+            .attr( 'data-item-id', item.id )
         );
         this.$container.trigger( 'show_item', [ item ] );
         
@@ -383,6 +398,7 @@
         this.$container = $( container );
         this.options = $.extend( {}, API.options, typeof options === 'object' && options || {} );
         this.init();
+        this.reset();
     }
     
     API.options =
@@ -390,48 +406,47 @@
         };
     
     API.prototype.init = function() {
-        this.items = [];
-        this.$title = $( '[data-control="current_title"]', this.$container );
+        this.item = undefined;
         this.$search = $( '[data-control="search"]' );
+        this.$new_tag = $( '[data-control="new_tag"]', this.$container );
+
+        this.$title = $( '[data-control="current_title"]', this.$container );
+        this.$rating = $( '[data-control="current_rating"]', this.$container );
         this.$dimensions = $( '[data-control="current_dimensions"]', this.$container );
         this.$date = $( '[data-control="post_date"]', this.$container );
         this.$tags = $( '[data-control="tags"]', this.$container );
-        this.$except_title = $( [ this.$dimensions, this.$date, this.$tags ] );
-        this.$tags.on( 'click', 'li', { 'api': this }, function( e ) {
-            var tag = $( this ).data( 'tag.tagd' );
-            e.data.api.$search.autocomplete_pills( 'add_pill', tag.id, tag.name );
-        } );
+        this.$all = $( [ this.$title, this.$rating, this.$dimensions, this.$date, this.$tags ] );
+        
+        this.$new_tag.autocomplete(
+            {
+                'source': tagd_js.rpc.tag_autocomplete,
+                'select': this.events.select_suggestion.bind( this )
+            }
+        );
+        this.$new_tag.on( 'keypress', { 'api': this }, this.events.keypress );
+        
+        this.$rating.ratings( { 'initial': [] } );
+
+        this.$rating.on( 'change.tagd', { 'api': this }, this.events.change_rating );
+        
+        this.$tags.on( 'click', 'li', { 'api': this }, this.events.click_tag );
     };
     
     API.prototype.reset = function() {
-        if ( this.items.length === 0 ) {
-            reset_none.call( this );
-        }
-        
-        if ( this.items.length === 1 ) {
-            reset_single.call( this, this.items[0] );
-        }
-        
-        if ( this.items.length > 1 ) {
-            reset_multiple.call( this, this.items );
-        }
-
-        function reset_none() {
-            this.$except_title.hide();
+        if ( this.item ) {
+            this.$all.show();
+            this.$title.text( this.item.title ).show();
+            if ( this.item.rating ) {
+                this.$rating.ratings( 'set', this.item.rating );
+            } else {
+                this.$rating.ratings( 'set_all', 0 );
+            }
+            this.$dimensions.text( this.item.dimensions );
+            this.$date.text( this.item.date );
+            this.set_tags( this.item.tags );
+        } else {
+            this.$all.hide();
             this.$title.text( tagd_js.lang.no_results ).hide();
-        }
-        
-        function reset_single( i ) {
-            this.$except_title.show();
-            this.$title.text( i.title );
-            this.$dimensions.text( i.dimensions );
-            this.$date.text( i.date );
-            this.set_tags( i.tags );
-        }
-        
-        function reset_multiple( items ) {
-            this.$except_title.hide();
-            this.$title.text( tagd_js.lang.showing_n_items.replace( '%d', items.length ) );
         }
     };
     
@@ -440,16 +455,97 @@
         
         for ( var i = 0, t; i < tag_list.length; i++ ) {
             t = tag_list[ i ];
-            $( '<li>' ).text( t.label )
-                      .data( 'tag.tagd', t )
-                      .appendTo( this.$tags );
+            var tag_btn = '<div class="btn-group"><button type="button" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-remove"></span></button><button type="button" class="btn btn-info btn-xs">' + t.label + '</button></div>';
+            $( '<li>' ).append( tag_btn )
+                       .data( 'tag.tagd', t )
+                       .attr( 'data-tag-id', t.id )
+                       .appendTo( this.$tags );
         }
-    }
+    };
     
-    API.prototype.update = function( items ) {
-        this.items = items;
+    API.prototype.update = function( item ) {
+        this.item = item;
         this.reset();
-    }
+    };
+    
+    API.prototype.new_tag = function( tag ) {
+        // todo - move me into template
+        if ( $( '[data-tag-id="' + String( tag.id ) + '"]' ).length === 0 ) {
+            append_new_tag.call( this, tag );
+        } else {
+            var btn = $( '.btn-info', find( tag ) );
+            btn.addClass( 'notransition' );
+                btn.removeClass( 'btn-info' );
+                btn.addClass( 'btn-success' );
+                btn[0].offsetHeight;
+            btn.removeClass( 'notransition' );
+        }        
+
+        setTimeout( unflash_tag( tag ).bind( this ), 3000 );
+
+        function find( tag ) {
+            return $( '[data-tag-id="' + String( tag.id ) + '"]', this.$tags );
+        }
+        
+        function append_new_tag() {
+            var tag_btn = '<div class="btn-group"><button type="button" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-remove"></span></button><button type="button" class="btn btn-success btn-xs">' + tag.label + '</button></div>';
+            var new_tag = $( '<li>' ).append( tag_btn )
+                                     .data( 'tag.tagd', tag )
+                                     .attr( 'data-tag-id', tag.id )
+                                     .fadeIn( 150 );
+            this.$tags.append( new_tag );
+        }
+        
+        function unflash_tag( tag ) {
+            return function() {
+                $( '.btn-success', find( tag ) )
+                    .removeClass( 'btn-success' )
+                    .addClass( 'btn-info' );
+            };
+        }
+    };
+    
+    API.prototype.remove_tag = function( tag ) {
+        
+    };
+    
+    API.prototype.events = {
+        'select_suggestion': function( e, ui ) {
+            e.preventDefault();
+            this.$new_tag.val( '' );
+            var item = new Item( this.item );
+            item.add_tag( ui.item.value, this.events.tag_added.bind( this ) );
+        },
+        
+        'keypress': function( e ) {
+            if ( e.keyCode === 13 ) {
+                var item = new Item( e.data.api.item );
+                item.add_unknown_tag( $( this ).val(), e.data.api.events.tag_added.bind( e.data.api ) );
+                $( this ).val( '' );
+            }
+        },
+        
+        'change_rating': function( e, ratings ) {
+            var api = e.data.api;
+            if ( api.item ) {
+                var item = new Item( api.item );
+                item.rate( ratings.get_highest() );
+            }
+        },
+        
+        'click_tag': function( e ) {
+            var tag = $( this ).data( 'tag.tagd' );
+            e.data.api.$search.autocomplete_pills( 'add_pill', tag.id, tag.name );
+        },
+        
+        'tag_added': function( response ) {
+            this.new_tag( response.new_tag );
+        },
+        
+        'tag_removed': function( response ) {
+            this.remove_tag( response.removed_tag );
+        }
+    };
 
     function Plugin( options ) {
         if ( options === 'api' ) {
@@ -479,6 +575,45 @@
         $.fn[ NAMESPACE ] = old;
         return this;
     };
+} )( jQuery, window );
+
+// Item API.
+( function( $, exports ) {
+    function Item( item ) {
+        this.item = item;
+    }
+    
+    Item.prototype.rate = function( rating, handler ) {
+        var data = { 'id': this.item.id, 'rating': rating };
+        $.post( tagd_js.rpc.update, data, this.events.response( handler ) );
+    };
+    
+    Item.prototype.add_tag = function( tag_id, handler ) {
+        var data = { 'id': this.item.id, 'new_tag_id': tag_id };
+        $.post( tagd_js.rpc.update, data, this.events.response( handler ) );
+    };
+    
+    Item.prototype.add_unknown_tag = function( tag_str, handler ) {
+        var data = { 'id': this.item.id, 'new_tag_str': tag_str };
+        $.post( tagd_js.rpc.update, data, this.events.response( handler ) );
+    };
+    
+    Item.prototype.remove_tag = function( tag_id, handler ) {
+        var data = { 'id': this.item.id, 'remove_tag_id': tag_id };
+        $.post( tagd_js.rpc.update, data, this.events.response( handler ) );
+    };
+    
+    Item.prototype.events = {
+        'response': function( handler ) {
+            return function( response ) {
+                if ( typeof handler === 'function' ) {
+                    handler.apply( this, arguments );
+                }
+            }
+        }
+    }
+    
+    exports.Item = Item;
 } )( jQuery, window );
 
 // Feed.
@@ -669,8 +804,8 @@ jQuery( function( $ ) {
     
     $( filters ).on( 'change.tagd', refresh );
     
-    $( '[data-control="stage"]' ).on( 'show_item.tagd', function( e, items ) {
-        $( '[data-control="meta_panel"]' ).meta_panel( 'update', items );
+    $( '[data-control="stage"]' ).on( 'show_item.tagd', function( e, item ) {
+        $( '[data-control="meta_panel"]' ).meta_panel( 'update', item );
     } );
     
     $( feed ).on( 'results.tagd', function( e, results ) {

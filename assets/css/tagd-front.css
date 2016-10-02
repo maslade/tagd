@@ -53,6 +53,13 @@ table {
 }
 
 /**
+ * Utilities
+ */
+.notransition {
+    transition: none !important;
+}
+
+/**
  * Browser
  */
 body {
@@ -76,8 +83,10 @@ body {
 	padding: 0 15px;
 }
 
-#browser .left_panel .row {
-    margin-bottom: 8px;
+#browser h1 {
+    color: #0F3E66;
+    font-size: 15px;
+    font-weight: 600;
 }
 
 #browser .search_rating, #browser .unrated {
@@ -86,11 +95,16 @@ body {
     padding-right: 5px;
 }
 
-#browser .search_pills li {
+#browser .search-pills li {
     padding: 0;
+    margin: 0 1px;
 }
 
-#browser .search_pills button {
+#browser .search-pills li:first-of-type {
+    margin-left: 0;
+}
+
+#browser .search-pills button {
     margin-bottom: 1px;
 }
 
@@ -112,15 +126,14 @@ body {
     font-weight: bold;
 }
 
-#browser .tags li {
-    font-size: 13px;
-    line-height: 20px;
+#browser .tags ul {
+    display: block;
+    margin-top: 10px;
 }
 
-#browser .tags .c {
-    color: #a0a0a0;
-    margin-left: 6px;
-    font-size: .9em;
+#browser .tags li button {
+    margin-bottom: 5px;
+    transition: color .5s, background-color .5s;
 }
 
 #browser .pages {

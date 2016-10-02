@@ -22,6 +22,7 @@ class Assets extends Base {
             'rpc' => array( 
                 'feed' => $this->rpc_url( \Tagd\EP_FEED ),
                 'tag_autocomplete' => $this->rpc_url( \Tagd\EP_TAG_AUTOCOMPLETE ),
+                'update' => $this->rpc_url( \Tagd\EP_UPDATE ),
             ),
             'lang' => array(
                 'no_results' => __( 'No results.', 'tagd' ),

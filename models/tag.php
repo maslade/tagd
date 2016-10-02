@@ -27,6 +27,23 @@ class Tag implements \JsonSerializable {
         return new self( $term );
     }
     
+    /**
+     * Return a term by name, creating it if it does not exist.
+     * 
+     * @param string $term_name
+     */
+    public static function get_or_make( $term_name ) {
+        $settings = new Settings();
+        $term = get_term_by( 'name', $term_name, $settings->item_taxonomy );
+        
+        if ( ! $term ) {
+            $term_ids = wp_insert_term( $term_name, $settings->item_taxonomy );
+            $term = get_term( $term['term_id'], $settings->item_taxonomy );
+        }
+        
+        return new self( $term );
+    }
+    
     public function label() {
         return sprintf( self::$label_format, $this->term->name, $this->term->count );
     }
