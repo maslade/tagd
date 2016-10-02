@@ -97,10 +97,18 @@ $view = new ViewerView();
                 </div>
                 <div class="col-xs-12 col-sm-9 col-md-10">
                     <div class="row">
-                        <div class="stage ssc-full-height col-xs-12 col-sm-10 col-sm-push-2 col-lg-11 col-lg-push-1" data-control="stage">
-                        </div>
-                        <div class="ondeck ssc-full-height col-xs-12 col-sm-2 col-sm-pull-10 col-lg-1 col-lg-pull-11" data-control="ondeck">
+                        <div class="ondeck ssc-full-height col-xs-12 col-sm-2 col-lg-1" data-control="ondeck">
+                            <div class="btn-group-xs btn-group-vertical" role="group" aria-label="Expand / Collapse Deck">
+                                <button type="button" class="btn btn-info" data-control="deck_shrink">
+                                    <span class="glyphicon glyphicon-minus-sign"></span>
+                                </button>
+                                <button type="button" class="btn btn-info" data-control="deck_grow">
+                                    <span class="glyphicon glyphicon-plus-sign"></span>
+                                </button>
+                            </div>
                             <ul></ul>
+                        </div>
+                        <div class="stage ssc-full-height col-xs-12 col-sm-10 col-lg-11" data-control="stage">
                         </div>
                     </div>
                 </div>

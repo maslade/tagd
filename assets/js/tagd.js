@@ -249,11 +249,17 @@
     
     API.options =
         {
-            'ondeck': '[data-control="ondeck"] ul'
+            'ondeck': '[data-control="ondeck"] ul',
+            'grow_btn': '[data-control="deck_grow"]',
+            'shrink_btn': '[data-control="deck_shrink"]',
         };
     
     API.prototype.init = function() {
         this.$ondeck = $( this.options.ondeck );
+        this.$shrink = $( this.options.shrink_btn )
+            .click( this.deck_shrink.bind( this, 2 ) );
+        this.$grow = $( this.options.grow_btn )
+            .click( this.deck_grow.bind( this, 2 ) );
         this.reset();
     };
     
@@ -279,6 +285,31 @@
             );
         }
     };
+    
+    API.prototype.deck_grow = function( cols ) {
+        cols = parseInt( cols ) || 2;
+        add_columns( this.$ondeck.parent().get( 0 ), cols );
+        remove_columns( this.$container.get( 0 ), cols );
+    };
+    
+    API.prototype.deck_shrink = function( cols ) {
+        cols = parseInt( cols ) || 2;
+        remove_columns( this.$ondeck.parent().get( 0 ), cols );
+        add_columns( this.$container.get( 0 ), cols );
+    };
+    
+        function add_columns( el, cols ) {
+            el.className = el.className.replace( /col-(sm|md|lg)-(\d\d?)( |$)/g, adjust_columns.bind( null, cols ) );
+        }
+        
+        function remove_columns( el, cols ) {
+            el.className = el.className.replace( /col-(sm|md|lg)-(\d\d?)( |$)/g, adjust_columns.bind( null, cols * -1 ) );
+        }
+        
+        function adjust_columns( amt, m, sz, cols, tail ) {
+            var col = Math.min( 11, Math.max( 1, parseInt( cols ) + amt ) );
+            return 'col-' + String( sz ) + '-' + String( col ) + String( tail );
+        }
     
     API.prototype.back_button = function( previous ) {
         

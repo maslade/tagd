@@ -25,8 +25,8 @@ const STYLE_BOOTSTRAP = 'tagd_bootstrap_css';
 const STYLE_JQUERY_UI = 'tagd_jquery_ui';
 
 const IMG_PINKY = 'tagd_pinky';
-const DIMS_PINKY_W = 80;
-const DIMS_PINKY_H = 80;
+const DIMS_PINKY_W = 160;
+const DIMS_PINKY_H = 160;
 
 require_once __DIR__ . '/views/base.php';
 require_once __DIR__ . '/views/admin-settings.php';
