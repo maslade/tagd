@@ -249,7 +249,7 @@
     
     API.options =
         {
-            'ondeck': '[data-control="ondeck"]'
+            'ondeck': '[data-control="ondeck"] ul'
         };
     
     API.prototype.init = function() {
@@ -273,7 +273,10 @@
         }
         
         function add( i, val ) {
-            this.$ondeck.append( $( '<li>' ).append( val.markup_pinky ).data( 'item.tagd', val ) );
+            this.$ondeck.append( $( '<li>' ).append( val.markup_pinky )
+                                            .data( 'item.tagd', val )
+                                            .on( 'click', { 'api': this }, this.show_item.bind( this, val ) )
+            );
         }
     };
     
@@ -286,10 +289,14 @@
     };
     
     API.prototype.show_item = function( item ) {
-        this.$container.append(
+        this.$container.empty().append(
             $( item.markup_full ).data( 'item.tagd', item )
         );
         this.$container.trigger( 'show_item', [ item ] );
+        
+        if ( $( document.body ).hasClass( 'xs' ) ) {
+            $( window ).scrollTop( this.$container.offset().top );
+        }
     };
     
     API.prototype.show_multiple = function( items ) {
@@ -537,6 +544,75 @@
     exports.FilterController = FilterController;
 } )( jQuery, window );
 
+( function( $, exports ) {
+    var running = false;
+    
+    function ScreenSizeController( options ) {
+        this.options = $.extend( {}, ScreenSizeController.options, options );
+        this.init();
+    }
+    
+    ScreenSizeController.options =
+        {
+            'targets': '.ssc-full-height',
+            'skip_height_for_sizes': [ 'xs' ]
+        };
+    
+    ScreenSizeController.prototype.init = function() {
+        window.addEventListener( 'resize', resize_handler( this.resize.bind( this ) ) );
+        this.signals = {
+            'xs': $( '<div>' ).addClass( 'visible-xs' ),
+            'sm': $( '<div>' ).addClass( 'visible-sm' ),
+            'md': $( '<div>' ).addClass( 'visible-md' ),
+            'lg': $( '<div>' ).addClass( 'visible-lg' ),
+        }
+        $( document.body ).append( this.signals.xs, this.signals.sm, this.signals.md, this.signals.lg );
+    };
+    
+    ScreenSizeController.prototype.resize = function() {
+        var size = get_size_class.call( this );
+        $( document.body ).removeClass( 'xs sm md lg' ).addClass( size );
+
+        if ( this.options.skip_height_for_sizes.indexOf( size ) === -1 ) {
+            var margin_top = parseInt( $( 'html' ).css( 'margin-top' ) );
+            $( document.body ).css( 'height', '100vh' );
+            $( document.body ).css( 'height', $( document.body ).outerHeight() - margin_top );
+
+            $( this.options.targets ).each( function() {
+                var height = String( $( document.body ).outerHeight() - $( document.body ).offset().top ) + 'px';
+                $( this ).css( 'height', height );
+            } );
+        } else {
+            $( this.options.targets ).css( 'height', '');
+        }
+        
+        function get_size_class() {
+            if ( this.signals.lg.is( ':visible' ) ) return 'lg';
+            if ( this.signals.md.is( ':visible' ) ) return 'md';
+            if ( this.signals.sm.is( ':visible' ) ) return 'sm';
+            return 'xs';
+        }
+    };
+    
+    function resize_handler( user_handler ) {
+        return outer_handler;
+        
+        function outer_handler( e ) {
+            if ( ! running ) {
+                requestAnimationFrame( inner_handler.bind( this ) )
+                running = true;
+            }
+        };
+        
+        function inner_handler() {
+            user_handler();
+            running = false;
+        };
+    }
+    
+    exports.ScreenSizeController = ScreenSizeController;
+} )( jQuery, window );
+
 // Front-end glue.
 jQuery( function( $ ) {
     var feed = new Feed( tagd_js.rpc.feed );
@@ -547,6 +623,7 @@ jQuery( function( $ ) {
             'ratings':     $( '[data-control="search_rating"]' ),
         }
     );
+    var resizer = new ScreenSizeController();
 
     $( '[data-control="meta_panel"]' ).meta_panel();
     $( '[data-control="search_rating"]' ).ratings();
@@ -582,6 +659,7 @@ jQuery( function( $ ) {
         }
     );
     
+    resizer.resize();
     refresh();
     
     function refresh() {

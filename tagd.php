@@ -19,7 +19,6 @@ const EP_TAG_AUTOCOMPLETE = 'tagd_autocomplete';
 const SCRIPT_TAGD = 'tagd_js';
 const SCRIPT_BOOTSTRAP = 'tagd_bootstrap_js';
 const SCRIPT_JQUERY_UI = 'tagd_jquery_ui';
-const SCRIPT_MASONRY = 'tagd_jquery_masonry';
 
 const STYLE_TAGD_FRONT_END = 'tagd_css';
 const STYLE_BOOTSTRAP = 'tagd_bootstrap_css';

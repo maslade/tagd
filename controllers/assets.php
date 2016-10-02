@@ -7,7 +7,6 @@ class Assets extends Base {
         \Tagd\SCRIPT_JQUERY_UI => array( 'file' => 'assets/jquery-ui/jquery-ui.min.js', 'deps' => array( 'jquery' ) ),
         \Tagd\SCRIPT_BOOTSTRAP => array( 'file' => 'assets/bootstrap/bootstrap.min.js' ),
         \Tagd\SCRIPT_TAGD => array( 'file' => 'assets/js/tagd.js', 'deps' => array( 'jquery', \Tagd\SCRIPT_JQUERY_UI ) ),
-        \Tagd\SCRIPT_MASONRY => array( 'file' => 'assets/jquery-masonry/masonry.pkgd.min.js', 'deps' => array( 'jquery' ) ),
     );
     
     public $script_manifests = array();
