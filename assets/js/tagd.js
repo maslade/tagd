@@ -269,7 +269,8 @@
         };
     
     API.prototype.init = function() {
-        this.$ondeck = $( this.options.ondeck );
+        this.$ondeck = $( this.options.ondeck )
+            .on( 'click', 'li', { 'api': this }, this.events.ondeck_click );
         this.$shrink = $( this.options.shrink_btn )
             .click( this.deck_shrink.bind( this, 2 ) );
         this.$grow = $( this.options.grow_btn )
@@ -293,9 +294,9 @@
         }
         
         function add( i, val ) {
-            this.$ondeck.append( $( '<li>' ).append( val.markup_pinky )
-                                            .data( 'item.tagd', val )
-                                            .on( 'click', { 'api': this }, this.show_item.bind( this, val ) )
+            this.$ondeck.append(
+                $( '<li>' ).append( val.markup_pinky )
+                           .data( 'item.tagd', val )
             );
         }
     };
@@ -357,6 +358,13 @@
         
         function click( e ) {
             e.data.api.show( $( this ).data( 'item.tagd' ) );
+        }
+    };
+    
+    API.prototype.events = {
+        'ondeck_click': function( e ) {
+            var item = $( this ).data( 'item.tagd' );
+            e.data.api.show_item( item );
         }
     };
     

@@ -24,7 +24,13 @@ class Item implements \JsonSerializable {
     public function tags() {
         $settings = new Settings();
         $terms = get_the_terms( $this->attachment, $settings->item_taxonomy );
-        return array_map( array( '\Tagd\Models\Tag', 'get' ), $terms ? $terms : array() );
+        $terms = array_map( array( '\Tagd\Models\Tag', 'get' ), $terms ? $terms : array() );
+        usort( $terms, array( $this, 'sort_tags' ) );
+        return $terms;
+    }
+    
+    protected function sort_tags( $a, $b) { 
+        return $b->term->count - $a->term->count;
     }
     
     public function add_tag( $term_id ) {
@@ -65,7 +71,7 @@ class Item implements \JsonSerializable {
             'title' => $this->filename(),
             'markup_full' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'full' ) ),
             'markup_thumb' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'medium' ) ),
-            'markup_pinky' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'thumb' ) ),
+            'markup_pinky' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'thumb' ), false, array( 'class' => 'img-thumbnail' ) ),
             'dimensions' => $this->dimensions()
         );
     }
