@@ -9,6 +9,8 @@ class Item implements \JsonSerializable {
 
     public $attachment;
     
+    public $autoplay = true; // for videos
+    
     public function __construct( $attachment = null ) {
         $this->attachment = get_post( $attachment );
         
@@ -34,11 +36,19 @@ class Item implements \JsonSerializable {
     }
     
     public function add_tag( $term_id ) {
+        if ( $term_id instanceof Tag ) {
+            $term_id = $term_id->term->term_id;
+        }
+        
         $settings = new Settings();
         wp_add_object_terms( $this->attachment->ID, $term_id, $settings->item_taxonomy );
     }
     
     public function remove_tag( $term_id ) {
+        if ( $term_id instanceof Tag ) {
+            $term_id = $term_id->term->term_id;
+        }
+        
         $settings = new Settings();
         wp_remove_object_terms( $this->attachment->ID, $term_id, $settings->item_taxonomy);
     }
@@ -62,18 +72,51 @@ class Item implements \JsonSerializable {
     }
     
     public function jsonSerialize() {
-        return array(
+        $serial = array(
             'id' => $this->attachment->ID,
             'rating' => $this->rating(),
             'tags' => $this->tags(),
             'date' => $this->attachment->post_date,
             'modified' => $this->attachment->post_modified,
             'title' => $this->filename(),
-            'markup_full' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'full' ) ),
-            'markup_thumb' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'medium' ) ),
-            'markup_pinky' => wp_get_attachment_image( $this->attachment->ID, $this->size( 'thumb' ), false, array( 'class' => 'img-thumbnail' ) ),
+            'markup_full' => $this->display_markup(),
+            'markup_pinky' => $this->pinky_markup(),
             'dimensions' => $this->dimensions()
         );
+        
+        if ( current_user_can( 'upload_files' ) ) {
+            $serial['admin_edit'] = str_replace( '&amp;', '&', get_edit_post_link( $this->attachment->ID ) );
+        }
+        
+        return $serial;
+    }
+    
+    public function pinky_markup() {
+        $icon = false;
+        
+        if ( strpos( $this->attachment->post_mime_type, 'video/' ) === 0 ) {
+            $icon = true;
+        }
+        
+        return wp_get_attachment_image( $this->attachment->ID, $this->size( 'thumb' ), $icon, array( 'class' => 'img-thumbnail' ) );
+    }
+    
+    public function display_markup() {
+        if ( strpos( $this->attachment->post_mime_type, 'video/' ) === 0 ) {
+            $embed = wp_video_shortcode( array( 'src' => wp_get_attachment_url( $this->attachment->ID ),
+                                         'autoplay' => $this->autoplay ) );
+
+            if ( in_array( $this->attachment->post_mime_type, array( 'video/x-flv', 'video/x-ms-wmv' ) ) ) {
+                $embed = sprintf( '<div id="%1$s">%2$s</div><script type="text/javascript">if ( typeof MediaElementPlayer !== "undefined" ) window.tagd_mep = MediaElementPlayer( jQuery( "#%1$s video" ).get( 0 ) );</script>',
+                    uniqid(),
+                    $embed
+                );
+            }
+
+            return $embed;
+        }
+        
+        return wp_get_attachment_image( $this->attachment->ID, $this->size( 'full' ) );
     }
     
     protected function size( $size ) {

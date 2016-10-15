@@ -15,6 +15,7 @@ $view = new ViewerView();
             <div class="row">
                 <div class="left_panel col-xs-12 col-sm-3 col-md-2" data-control="meta_panel">
                     <div class="input-group input-group-sm">
+                        <input type="hidden" data-control="request_item_ids" autocomplete="off" />
                         <input type="text" class="form-control" data-control="search" placeholder="Search..." autocomplete="off" />
                         <span class="input-group-btn">
                             <button class="btn btn-primary" data-control="go_btn" type="button">Go!</button>
@@ -31,7 +32,7 @@ $view = new ViewerView();
                         </ul>
                         <div class="form-group unrated">
                             <label>
-                                <input type="checkbox" class="form-control" data-control="unrated" />
+                                <input type="checkbox" class="form-control" data-control="unrated" autocomplete="off" />
                                 Unrated
                             </label>
                         </div>
@@ -55,7 +56,12 @@ $view = new ViewerView();
                     
                     <hr/>
                     
-                    <h1 data-control="current_title"></h1>
+                    <header class="push-container">
+                        <h1 class="ellipsed" data-control="current_title"></h1>
+                        <a class="permalink push-right push-top" data-control="permalink"><span class="permalink glyphicon glyphicon-link"></span></a>
+                    </header>
+                    <span class="item_id" data-control="item_id"></span>
+                    <span class="small-link" data-control="admin-edit"></span>
 
                     <div class="current_rating">
                         <ul data-control="current_rating">
@@ -65,6 +71,7 @@ $view = new ViewerView();
                             <li class="glyphicon clickable"></li>
                             <li class="glyphicon clickable"></li>
                         </ul>
+                        <span data-control="speed_rate" class="clickable label label-info"><span class="glyphicon glyphicon-lock"></span></span>
                     </div>
 
                     <div class="details">
@@ -77,43 +84,35 @@ $view = new ViewerView();
 
                     <div class="tags">
                         <input data-control="new_tag" autocomplete="off" />
+                        <span data-control="bulk_tag" class="clickable label label-info"><span class="glyphicon glyphicon-tags"></span></span>
                         <ul class="btn-group-vertical" data-control="tags">
                         </ul>
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-9 col-md-10">
-                    <div class="toolbox" data-control="toolbox">
-                        <div class="row hidden">
-                            <div class="col-xs-1">
-                                <!-- Nav tabs -->
-                                <ul class="nav nav-pills nav-stacked" role="tablist">
-                                    <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="pill">Home</a></li>
-                                    <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="pill">Profile</a></li>
-                                    <li role="presentation"><a href="#messages" aria-controls="messages" role="tab" data-toggle="pill">Messages</a></li>
-                                    <li role="presentation"><a href="#settings" aria-controls="settings" role="tab" data-toggle="pill">Settings</a></li>
-                                </ul>
-                            </div>
-                            <div class="col-xs-11">
-                                <!-- Tab panes -->
-                                <div class="tab-content">
-                                    <div role="tabpanel" class="tab-pane active" id="home">...</div>
-                                    <div role="tabpanel" class="tab-pane" id="profile">...</div>
-                                    <div role="tabpanel" class="tab-pane" id="messages">...</div>
-                                    <div role="tabpanel" class="tab-pane" id="settings">...</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <div class="row">
                         <div class="ondeck ssc-full-height col-xs-12 col-sm-2 col-lg-1" data-control="ondeck">
-                            <div class="btn-group-xs btn-group-vertical" role="group" aria-label="Expand / Collapse Deck">
-                                <button type="button" class="btn btn-info" data-control="deck_shrink">
-                                    <span class="glyphicon glyphicon-minus-sign"></span>
-                                </button>
-                                <button type="button" class="btn btn-info" data-control="deck_grow">
-                                    <span class="glyphicon glyphicon-plus-sign"></span>
-                                </button>
+                            <div class="deck-settings">
+                                <div class="btn-group-xs btn-group-vertical" role="group">
+                                    <button type="button" class="btn btn-success" data-control="toggle_slideshow">
+                                        <span class="glyphicon glyphicon-play"></span>
+                                    </button>
+                                </div>
+                                <div class="btn-group-xs btn-group-vertical" role="group">
+                                    <button type="button" class="btn btn-info" data-control="toggle_mute">
+                                        <span class="glyphicon glyphicon-volume-up"></span>
+                                    </button>
+                                </div>
+                                <div class="btn-group-xs btn-group-vertical" role="group" aria-label="Expand / Collapse Deck">
+                                    <button type="button" class="btn btn-info" data-control="deck_shrink">
+                                        <span class="glyphicon glyphicon-minus-sign"></span>
+                                    </button>
+                                    <button type="button" class="btn btn-info" data-control="deck_grow">
+                                        <span class="glyphicon glyphicon-plus-sign"></span>
+                                    </button>
+                                </div>
                             </div>
+                            
                             <ul></ul>
                         </div>
                         <div class="stage ssc-full-height col-xs-12 col-sm-10 col-lg-11" data-control="stage">

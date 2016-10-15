@@ -17,12 +17,13 @@ class RPC {
         'post_type' => 'attachment',
         'post_status' => 'inherit',
         'paged' => 1,
-        'posts_per_page' => 30,
+        'posts_per_page' => 100,
         'orderby' => 'post_date',
         'order' => 'desc',
     );
     
     public $feed_filters = array(
+        'ids' => false,
         'page' => 1,
         'tags' => array(),
         'ratings' => null,
@@ -69,15 +70,44 @@ class RPC {
     }
     
     protected function feed() {
-        $settings = new \Tagd\Models\Settings();
-        
-        $query_args = $this->feed_args;
         $user_filters = wp_unslash( isset( $_GET['filters'] ) ? $_GET['filters'] : array() );
         $filters = wp_parse_args( $user_filters, $this->feed_filters );
         
+        if ( $filters['items'] ) {
+            $query = $this->feed_posts( $filters );
+        } else {
+            $query = $this->feed_search( $filters );
+        }
+        $feed = array(
+            'items' => array_map( array( '\Tagd\Models\Item', 'get' ), $query->posts ),
+            'request' => $filters,
+            'total_items' => $query->post_count,
+            'page' => $query_args['paged'],
+            'total_pages' => $query->max_num_pages,
+        );
+        
+        $this->send_json( $feed );
+
+    }
+    
+    protected function feed_posts( $filters ) {
+        $settings = new \Tagd\Models\Settings();
+        $query_args = $this->feed_args;
+        
+        $post_ids = array_map( 'intval', array_map( 'trim', explode( ',', $filters['items'] ) ) );
+        $query_args['post__in'] = $post_ids;
+        
+        return new \WP_Query( $query_args );
+    }
+    
+    protected function feed_search( $filters ) {
+        $settings = new \Tagd\Models\Settings();
+        $query_args = $this->feed_args;
+
         if ( ! is_array( $filters['tags'] ) ) {
             $filters['tags'] = array();
         }
+        
         if ( $filters['tags'] ) {
             $filters['tags'] = array_map( 'intval', $filters['tags'] );
             $query_args['tax_query'] = array(
@@ -90,19 +120,28 @@ class RPC {
             );
         }
         
+        if ( $filters['unrated'] ) {
+            $query_args['meta_query'] = array(
+                array(
+                    'key' => \Tagd\Models\Item::META_RATING,
+                    'compare' => 'NOT EXISTS',
+                )
+            );
+        }
+        else if ( $filters['ratings'] ) {
+            $query_args['meta_query'] = array(
+                array(
+                    'key' => \Tagd\Models\Item::META_RATING,
+                    'compare' => 'IN',
+                    'value' => array_map( create_function( '$x', 'return (int) $x + 1;' ), array_keys( $filters['ratings'], true ) ),
+                )
+            );
+        }
+        
         $query_args['paged'] = (int) $filters['page'];
+        $query_args['orderby'] = 'rand';
  
-        $query = new \WP_Query( $query_args );
-        
-        $feed = array(
-            'items' => array_map( array( '\Tagd\Models\Item', 'get' ), $query->posts ),
-            'request' => $filters,
-            'total_items' => $query->post_count,
-            'page' => $query_args['paged'],
-            'total_pages' => $query->max_num_pages,
-        );
-        
-        $this->send_json( $feed );
+        return new \WP_Query( $query_args );
     }
     
     protected function tag_autocomplete() {
@@ -144,7 +183,9 @@ class RPC {
         $remove_tag_id = isset( $_POST['remove_tag_id'] ) ? (int) $_POST['remove_tag_id'] : false;
 
         $item = new \Tagd\Models\Item( $item_id );
-        $response = array();
+        $response = array(
+            'updated_item' => $item,
+        );
         
         if ( $rating ) {
             $item->rate( $rating );
@@ -152,19 +193,18 @@ class RPC {
         }
         
         if ( $new_tag_str ) {
-            $tag = \Tagd\Models\Tag::get_or_make( $new_tag_str );
-            $new_tag_id = $tag->term->term_id;
+            $response['new_tag'] = $tag = \Tagd\Models\Tag::get_or_make( $new_tag_str );
+            $item->add_tag( $tag );
         }
         
         if ( $new_tag_id ) {
-            $tag = new \Tagd\Models\Tag( $new_tag_id );
-            $response[ 'new_tag' ] = $tag;
+            $response['new_tag'] = $tag = new \Tagd\Models\Tag( $new_tag_id );
+            $item->add_tag( $tag );
         }
         
         if ( $remove_tag_id ) {
-            $item->remove_tag( $remove_tag_id );
-            $tag = new \Tagd\Models\Tag( $remove_tag_id );
-            $response[ 'removed_tag' ] = $tag;
+            $response[ 'removed_tag' ] = $tag = new \Tagd\Models\Tag( $remove_tag_id );
+            $item->remove_tag( $tag );
         }
         
         $this->send_json( $response );

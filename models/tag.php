@@ -38,7 +38,7 @@ class Tag implements \JsonSerializable {
         
         if ( ! $term ) {
             $term_ids = wp_insert_term( $term_name, $settings->item_taxonomy );
-            $term = get_term( $term['term_id'], $settings->item_taxonomy );
+            $term = get_term( $term_ids['term_id'], $settings->item_taxonomy );
         }
         
         return new self( $term );

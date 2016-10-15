@@ -59,6 +59,27 @@ table {
     transition: none !important;
 }
 
+.small-link {
+    font-size: 11px;
+}
+
+.clickable:hover {
+    cursor: pointer;
+}
+
+.ellipsed {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.push-container { position: relative;            }
+.push-right     { position: absolute; right:  0; }
+.push-left      { position: absolute; left:   0; }
+.push-top       { position: absolute; top:    0; }
+.push-bottom    { position: absolute; bottom: 0; }
+
 /**
  * Browser
  */
@@ -68,10 +89,6 @@ body {
 
 [data-template] {
     display: none !important;
-}
-
-.clickable {
-    cursor: pointer;
 }
 
 #browser {
@@ -84,9 +101,18 @@ body {
 }
 
 #browser h1 {
+    display: inline-block;
     color: #0F3E66;
     font-size: 15px;
     font-weight: 600;
+    word-wrap: break-word;
+    padding-right: 35px;
+}
+
+#browser header > * {
+    display: inline-block;
+    margin: 0 5px 10px 0;
+    max-width: 100%;
 }
 
 #browser .search_rating, #browser .unrated {
@@ -113,12 +139,26 @@ body {
     text-decoration: underline;
 }
 
-#browser .title {
-    font-weight: bold;
+#browser .item_id {
+	display: block;
+	font-size: 13px;
+}
+
+#browser .item_id:before {
+    content: '#';
 }
 
 #browser .current_rating {
     font-size: 14px;
+}
+
+#browser .current_rating ul {
+	display: inline-block;
+}
+
+[data-control="speed_rate"].active {
+	background-color: #1c88a8;
+	border: solid 1px #333;
 }
 
 #browser .details {
@@ -129,6 +169,14 @@ body {
 #browser .tags ul {
     display: block;
     margin-top: 10px;
+}
+
+#browser .tags input, #browser .tags input + span {
+    vertical-align: middle;
+}
+
+#browser .tags input + span .glyphicon {
+    top: 2px;
 }
 
 #browser .tags li button {
@@ -154,7 +202,7 @@ body {
     position: relative;
 }
 
-#browser .ondeck > div {
+#browser .deck-settings {
     position: absolute;
     top: 0;
     left: -12px;
@@ -163,7 +211,7 @@ body {
     transition: opacity .25s;
 }
 
-#browser .ondeck:hover > div {
+#browser .ondeck:hover > .deck-settings {
     opacity: 1;
 }
 

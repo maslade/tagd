@@ -27,8 +27,9 @@
         {
             'class_on': 'glyphicon-star',
             'class_off': 'glyphicon-star-empty',
-            'initial': [ 1, 1, 1 ],
-            'clickable': true,
+            'initial': [ 0, 0, 1, 1, 1 ],
+            'clickable': 'min',
+            'dbl_clickable': 'single',
             'child_selector': '*'
         };
     
@@ -36,6 +37,11 @@
         if ( this.options.clickable ) {
             this.$container.on( 'click', this.options.child_selector, { 'api': this }, this.events.click );
         }
+        
+        if ( this.options.dbl_clickable ) {
+            this.$container.on( 'dblclick', this.options.child_selector, { 'api': this }, this.events.dblclick );
+        }
+        
         this.reset();
     };
     
@@ -105,12 +111,26 @@
                 
                 api.set_all( false );
                 
-                while ( i >= 0 ) {
-                    api.set( i, true );
-                    i--;
+                if ( api.options.clickable === 'max' ) {
+                    while ( i >= 0 ) {
+                        api.set( i, true );
+                        i--;
+                    }
+                } else {
+                    while ( i <= api.stars().length ) {
+                        api.set( i, true );
+                        i++;
+                    }
                 }
                 
                 e.data.api.change();
+            },
+            
+        'dblclick': function( e )
+            {
+                e.preventDefault();
+                e.data.api.set_all( false );
+                e.data.api.set( e.data.api.stars().index( this ), true );
             }
     };
     
@@ -266,21 +286,33 @@
             'ondeck': '[data-control="ondeck"] ul',
             'grow_btn': '[data-control="deck_grow"]',
             'shrink_btn': '[data-control="deck_shrink"]',
+            'mute': false,
         };
     
     API.prototype.init = function() {
+        this.showing = null;
+        this.mute = this.options.mute;
         this.$ondeck = $( this.options.ondeck )
             .on( 'click', 'li', { 'api': this }, this.events.ondeck_click );
         this.$shrink = $( this.options.shrink_btn )
             .click( this.deck_shrink.bind( this, 2 ) );
         this.$grow = $( this.options.grow_btn )
             .click( this.deck_grow.bind( this, 2 ) );
+        $( window ).on( 'updated_item.tagd', this.events.item_updated.bind( this ) );
         this.reset();
     };
     
     API.prototype.reset = function() {
         this.items = [];
+        this.empty_container();
+    };
+    
+    API.prototype.empty_container = function() {
         this.$container.empty();
+        if ( typeof window.tagd_mep !== 'undefined' ) {
+            window.tagd_mep.remove();
+            delete window.tagd_mep;
+        }
     };
     
     API.prototype.ondeck = function( items ) {
@@ -297,6 +329,7 @@
             this.$ondeck.append(
                 $( '<li>' ).append( val.markup_pinky )
                            .data( 'item.tagd', val )
+                           .attr( 'data-item-id', val.id )
             );
         }
     };
@@ -326,38 +359,66 @@
             return 'col-' + String( sz ) + '-' + String( col ) + String( tail );
         }
     
-    API.prototype.back_button = function( previous ) {
-        
-    };
-    
     API.prototype.show_index = function( index ) {
         this.show_item( this.items[ index ] );
     };
     
-    API.prototype.show_item = function( item ) {
-        this.$container.empty().append(
-            $( item.markup_full ).data( 'item.tagd', item )
-            .attr( 'data-item-id', item.id )
-        );
-        this.$container.trigger( 'show_item', [ item ] );
-        
-        if ( $( document.body ).hasClass( 'xs' ) ) {
-            $( window ).scrollTop( this.$container.offset().top );
+    API.prototype.show_prev = function() {
+        this.move( -1 );
+    };
+    
+    API.prototype.show_next = function() {
+        this.move( 1 );
+    };
+    
+    API.prototype.move = function( dir ) {
+        if ( this.showing ) {
+            var item_in_deck = this.find_in_deck( this.showing.id );
+            if ( item_in_deck ) {
+                var next = ( dir >= 0 ) ? $( item_in_deck ).next() : $( item_in_deck ).prev();
+                if ( next && next.data( 'item.tagd' ) ) {
+                    this.show_item( next.data( 'item.tagd' ) );
+                } else {
+                    this.show_index( ( dir >= 0 ) ? 0 : this.items.length - 1 );
+                }
+            }
+        } else if( this.items ) {
+            this.show_index( 0 );
         }
     };
     
-    API.prototype.show_multiple = function( items ) {
-        var item;
+    API.prototype.show_item = function( item ) {
+        this.showing = item;
+        this.empty_container();
+        this.$container.append(
+                           $( '<div>' ).addClass( 'inner' )
+                                       .css( 'height', this.$container.css( 'height' ) )
+                                       .append( item.markup_full )
+                        )
+                       .data( 'item.tagd', item )
+                       .attr( 'data-item-id', item.id );
+
+        this.$container.trigger( 'show_item', [ item ] );
         
-        for ( var i = 0; i < items.length; i++ ) {
-            item = $( items[ i ].markup_thumb )
-                   .data( 'item.tagd', items[ i ] )
-                   .on( 'click', { 'api': this }, click );
-            this.$container.append( $( '<div>' ).append( item ) );
+        if ( this.mute ) {
+            var video = $( 'video', this.$container );
+            if ( video.length ) {
+                video.get( 0 ).muted = true;
+            }
+            if ( typeof window.tagd_mep !== 'undefined' ) {
+                window.tagd_mep.setMuted(true);
+            }
         }
+    };
+    
+    API.prototype.find_in_deck = function( item_id ) {
+        var ondeck = $( 'li', this.$ondeck );
         
-        function click( e ) {
-            e.data.api.show( $( this ).data( 'item.tagd' ) );
+        for ( var i = 0; i < ondeck.length; i++ ) {
+            var my_item = $( ondeck[ i ] ).data( 'item.tagd' );
+            if ( my_item && my_item.id === parseInt( item_id ) ) {
+                return ondeck[ i ];
+            }
         }
     };
     
@@ -365,7 +426,25 @@
         'ondeck_click': function( e ) {
             var item = $( this ).data( 'item.tagd' );
             e.data.api.show_item( item );
-        }
+        },
+        
+        'item_updated': function( e, item, changes ) {
+            var item_in_deck = this.find_in_deck( item.id );
+            
+            if ( item_in_deck ) {
+                $( item_in_deck ).data( 'item.tagd', item );
+            }
+            
+            for ( var i = 0; i < this.items.length; i++ ) {
+                if ( this.items[ i ].id === parseInt( item.id ) ) {
+                    this.items[ i ] = item;
+                }
+            }
+            
+            if ( parseInt( this.showing.id ) === parseInt( item.id ) ) {
+                this.show_item( item );
+            }
+        },
     };
     
     function Plugin( options ) {
@@ -419,11 +498,14 @@
         this.$new_tag = $( '[data-control="new_tag"]', this.$container );
 
         this.$title = $( '[data-control="current_title"]', this.$container );
+        this.$permalink = $( '[data-control="permalink"]', this.$container );
+        this.$admin_edit = $( '[data-control="admin-edit"]', this.$container );
+        this.$item_id = $( '[data-control="item_id"]', this.$container );
         this.$rating = $( '[data-control="current_rating"]', this.$container );
         this.$dimensions = $( '[data-control="current_dimensions"]', this.$container );
         this.$date = $( '[data-control="post_date"]', this.$container );
         this.$tags = $( '[data-control="tags"]', this.$container );
-        this.$all = $( [ this.$title, this.$rating, this.$dimensions, this.$date, this.$tags ] );
+        this.$all = $( [ this.$title, this.$permalink, this.$item_id, this.$admin_edit, this.$rating, this.$dimensions, this.$date, this.$tags ] );
         
         this.$new_tag.autocomplete(
             {
@@ -433,17 +515,27 @@
         );
         this.$new_tag.on( 'keypress', { 'api': this }, this.events.keypress );
         
-        this.$rating.ratings( { 'initial': [] } );
+        this.$rating.ratings( { 'initial': [], 'clickable': 'max' } );
 
         this.$rating.on( 'change.tagd', { 'api': this }, this.events.change_rating );
         
-        this.$tags.on( 'click', 'li', { 'api': this }, this.events.click_tag );
+        this.$tags.on( 'click', 'li .add_tag', { 'api': this }, this.events.click_add_tag );
+        this.$tags.on( 'click', 'li .remove_tag', { 'api': this }, this.events.click_remove_tag );
     };
     
     API.prototype.reset = function() {
         if ( this.item ) {
             this.$all.show();
             this.$title.text( this.item.title ).show();
+            this.$permalink.prop( 'href', document.location.href.replace( /#.*$/, '' ) + '#' + String( this.item.id ) );
+            this.$item_id.text( this.item.id );
+            if ( this.item.admin_edit ) {
+                this.$admin_edit.show()
+                                .empty()
+                                .append( $( '<a target="_blank">edit</a>' ).prop( 'href', this.item.admin_edit ) );
+            } else {
+                this.$admin_edit.hide();
+            }
             if ( this.item.rating ) {
                 this.$rating.ratings( 'set', this.item.rating );
             } else {
@@ -463,7 +555,7 @@
         
         for ( var i = 0, t; i < tag_list.length; i++ ) {
             t = tag_list[ i ];
-            var tag_btn = '<div class="btn-group"><button type="button" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-remove"></span></button><button type="button" class="btn btn-info btn-xs">' + t.label + '</button></div>';
+            var tag_btn = '<div class="btn-group"><button type="button" class="remove_tag btn btn-danger btn-xs"><span class="glyphicon glyphicon-remove"></span></button><button type="button" class="add_tag btn btn-info btn-xs">' + t.label + '</button></div>';
             $( '<li>' ).append( tag_btn )
                        .data( 'tag.tagd', t )
                        .attr( 'data-tag-id', t.id )
@@ -489,14 +581,14 @@
             btn.removeClass( 'notransition' );
         }        
 
-        setTimeout( unflash_tag( tag ).bind( this ), 3000 );
+        setTimeout( unflash_tag( tag ).bind( this ), this.lap_duration );
 
         function find( tag ) {
             return $( '[data-tag-id="' + String( tag.id ) + '"]', this.$tags );
         }
         
         function append_new_tag() {
-            var tag_btn = '<div class="btn-group"><button type="button" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-remove"></span></button><button type="button" class="btn btn-success btn-xs">' + tag.label + '</button></div>';
+            var tag_btn = '<div class="btn-group"><button type="button" class="remove_tag btn btn-danger btn-xs"><span class="glyphicon glyphicon-remove"></span></button><button type="button" class="add_tag btn btn-success btn-xs">' + tag.label + '</button></div>';
             var new_tag = $( '<li>' ).append( tag_btn )
                                      .data( 'tag.tagd', tag )
                                      .attr( 'data-tag-id', tag.id )
@@ -514,7 +606,8 @@
     };
     
     API.prototype.remove_tag = function( tag ) {
-        
+        var li = $( 'li[data-tag-id="' + String( parseInt( tag.id ) ) + '"]', this.$tags );
+        li.fadeOut( function() { $( this ).remove(); } );
     };
     
     API.prototype.events = {
@@ -541,9 +634,17 @@
             }
         },
         
-        'click_tag': function( e ) {
-            var tag = $( this ).data( 'tag.tagd' );
+        'click_add_tag': function( e ) {
+            
+            var tag = $( this ).parents( 'li:first' ).data( 'tag.tagd' );
             e.data.api.$search.autocomplete_pills( 'add_pill', tag.id, tag.name );
+        },
+        
+        'click_remove_tag': function( e ) {
+            var api = e.data.api;
+            var tag = $( this ).parents( 'li:first' ).data( 'tag.tagd' );
+            var item = new Item( api.item );
+            item.remove_tag( tag.id, api.events.tag_removed.bind( api ) );
         },
         
         'tag_added': function( response ) {
@@ -614,6 +715,10 @@
     Item.prototype.events = {
         'response': function( handler ) {
             return function( response ) {
+                if ( response.updated_item ) {
+                    $( window ).trigger( 'updated_item.tagd', [ response.updated_item, response ] );
+                }
+                
                 if ( typeof handler === 'function' ) {
                     handler.apply( this, arguments );
                 }
@@ -642,7 +747,8 @@
     Feed.filters = {
         'tags': null,
         'unrated': null,
-        'ratings': null
+        'ratings': null,
+        'items': null,
     };
     
     Feed.prototype.update_filters = function( filters, reset ) {
@@ -657,9 +763,10 @@
     Feed.prototype.fetch = function( results_handler ) {
         var args = {};
         
-        for ( var key in this.filters ) {
-            args[ 'filters[' + key + ']' ] = this.filters[ key ];
-        }
+        args['filters[tags]'] = this.filters['tags'];
+        args['filters[items]'] = this.filters['items'];
+        args['filters[unrated]'] = this.filters['unrated'] ? 1 : 0;
+        args['filters[ratings]'] = this.filters['ratings'].map( function( b ) { return b ? 1 : 0; } );
         
         if ( this.current_request ) {
             this.current_request.abort();
@@ -690,20 +797,33 @@
     FilterController.options = {
         'search': null,
         'unrated_cb': null,
-        'ratings': null
+        'ratings': null,
+        'item_ids': null,
     };
     
     FilterController.prototype.init = function() {
         this.$search = $( this.options.search );
         this.$unrated_cb = $( this.options.unrated_cb );
         this.$ratings = $( this.options.ratings );
+        this.$item_ids = $( this.options.item_ids );
         
         this.$search.on( 'change.tagd', this.change.bind( this ) )
-        this.$unrated_cb.click( this.change.bind( this ) );
-        this.$ratings.on( 'change.tagd', this.change.bind( this ) );
+        this.$unrated_cb.click( this.handler_clear_stars.bind( this ) );
+        this.$ratings.on( 'change.tagd', this.handler_clear_unrated.bind( this ) );
+    };
+    
+    FilterController.prototype.handler_clear_stars = function() {
+        $( this.$ratings ).ratings( 'set_all', false );
+        this.change();
+    };
+    
+    FilterController.prototype.handler_clear_unrated = function() {
+        $( this.$unrated_cb ).prop( 'checked', false );
+        this.change();
     };
     
     FilterController.prototype.change = function( e ) {
+        this.$item_ids.val( '' );
         $( this ).trigger( 'change.tagd' )
     };
     
@@ -712,6 +832,7 @@
             'tags': this.$search.autocomplete_pills( 'api' ).get(),
             'unrated': this.$unrated_cb.prop( 'checked' ),
             'ratings': this.$ratings.ratings( 'api' ).get(),
+            'items': this.$item_ids.val(),
         };
     };
     
@@ -795,6 +916,7 @@ jQuery( function( $ ) {
             'search':      $( '[data-control="search"]' ),
             'unrated_cb':  $( '[data-control="unrated"]' ),
             'ratings':     $( '[data-control="search_rating"]' ),
+            'item_ids':    $( '[data-control="request_item_ids"]' ),
         }
     );
     var resizer = new ScreenSizeController();
@@ -826,12 +948,107 @@ jQuery( function( $ ) {
         $( '[data-control="unrated"]' ).prop( 'checked', false );
     } );
     
+    $( '[data-control="speed_rate"]' ).click( function( e ) {
+        $( this ).toggleClass( 'active' );
+        if ( $( this ).hasClass( 'active' ) ) {
+            $( window ).on( 'updated_item.tagd', speed_rate_next_item );
+            $( window ).on( 'keypress', speed_rate_keypress );
+        } else {
+            $( window ).off( 'updated_item.tagd', speed_rate_next_item );
+            $( window ).off( 'keypress', speed_rate_keypress );
+        }
+    } );
+    
+    function Timer( handler ) {
+        this.lap_duration = 30000;
+        this.loop = true
+        if ( typeof handler === 'function' ) {
+            this.handler = handler;
+        }
+        this.reset();
+    }
+    
+    Timer.prototype.reset = function() {
+        this.remaining    = 0;
+        this.timeout      = null;
+        this.running      = false;
+        this.running_to   = null;
+    }
+    
+    Timer.prototype.start = function() {
+        if ( ! this.running ) {
+            if ( ! this.remaining ) {
+                this.remaining = this.lap_duration;
+            }
+            this.running = true;
+            this.running_to = ( new Date() ).getTime() + this.remaining;
+            this.timeout = setTimeout( this.lap.bind( this ), this.remaining );
+        }
+    };
+    
+    Timer.prototype.pause = function() {
+        if ( this.running ) {
+            this.remaining = this.running_to - ( new Date() ).getTime();
+            clearTimeout( this.timeout );
+            this.timeout = null;
+            this.running = false;
+            this.running_to = null;
+        }
+    };
+    
+    Timer.prototype.lap = function() {
+        this.reset();
+        
+        if ( this.loop ) {
+            this.start();
+        }
+        
+        if ( typeof this.handler === 'function' ) {
+            this.handler();
+        }
+    };
+    
+    var t = new Timer( function() {
+        $( '[data-control="stage"]' ).stage( 'show_next' );
+    } );
+    
+    $( '[data-control="toggle_slideshow"]' ).click( function( e ) {
+        if ( t.running ) {
+            t.pause();
+            $( '.glyphicon', this ).addClass( 'glyphicon-play'  ).removeClass( 'glyphicon-pause' );
+        } else {
+            t.start();
+            $( '.glyphicon', this ).addClass( 'glyphicon-pause' ).removeClass( 'glyphicon-play'  );
+        }
+    } );
+    
+    $( '[data-control="toggle_mute"]' ).click( function( e ) {
+        var stage = $( '[data-control="stage"]' ).stage( 'api' );
+        if ( stage.mute ) {
+            stage.mute = false;
+            $( this ).addClass( 'btn-info'   ).removeClass( 'btn-danger' );
+            $( '.glyphicon', this ).addClass( 'glyphicon-volume-up'  ).removeClass( 'glyphicon-volume-off' );
+        } else {
+            stage.mute = true;
+            $( this ).addClass( 'btn-danger' ).removeClass( 'btn-info'   );
+            $( '.glyphicon', this ).addClass( 'glyphicon-volume-off' ).removeClass( 'glyphicon-volume-up'  );
+        }
+    } );
+    
     $( document ).data( 'tagd',
         {
             'feed': feed,
             'filter': filters
         }
     );
+
+    if ( document.location.hash && document.location.hash !== '#' ) {
+        // @todo expand this to populate other filter settings, too.
+        var item_ids = document.location.hash.substr( 1 ).split( ',' ).map( function( x ) { return parseInt( x ); } ).filter( Boolean );
+        if ( item_ids ) {
+            filters.$item_ids.val( item_ids.join( ',' ) );
+        }
+    }
     
     resizer.resize();
     refresh();
@@ -839,6 +1056,32 @@ jQuery( function( $ ) {
     function refresh() {
         var args = filters.extract();
         feed.refresh( args );
+    }
+    
+    function speed_rate_keypress( e ) {
+        switch( parseInt( e.which ? e.which : e.keyCode ) ) {
+            case 49: // 1
+            case 50: // 2
+            case 51: // 3
+            case 52: // 4
+            case 53: // 5
+                var rating = parseInt( e.charCode ) - 48;
+                var item = $( '[data-control="stage"]' ).stage( 'api' ).showing;
+                new Item( item ).rate( rating );
+                break;
+            case 37: // <-
+                $( '[data-control="stage"]' ).stage( 'api' ).show_prev();
+                break;
+            case 39: // ->
+                $( '[data-control="stage"]' ).stage( 'api' ).show_next();
+                break;
+        }
+    };
+    
+    function speed_rate_next_item( e, item, updates ) {
+        if ( updates.new_rating ) {
+            $( '[data-control="stage"]' ).stage( 'api' ).show_next();
+        }
     }
 } );
 

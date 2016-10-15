@@ -54,7 +54,8 @@ class AdminSettings extends Base {
 
         if ( $nonce && wp_verify_nonce( $nonce, $action ) ) {
             $this->did_update = $this->settings_model->save_permalink( $input['permalink'] );
-            flush_rewrite_rules();
+            \Tagd\tagd( 'Router' )->add_rewrite_rules( $input['permalink'] );
         }
     }
+
 }

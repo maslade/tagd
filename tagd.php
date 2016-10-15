@@ -42,6 +42,11 @@ require_once __DIR__ . '/lib/diagnostics.php';
 load_controller( 'data-structure.php' );
 load_controller( 'media.php' );
 load_controller( 'assets.php' );
-load_controller( 'viewer.php' );
+load_controller( 'router.php' );
 load_admin_controller( 'admin-settings.php' );
 load_ajax_controller( 'rpc.php' );
+
+
+function tagd( $controller ) {
+    return Loader::$controllers[ $controller ];
+}
