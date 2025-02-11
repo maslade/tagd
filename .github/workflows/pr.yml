@@ -1,9 +1,7 @@
 name: Basic check
 
 on:
-  pull_request:
-    branches:
-      - "*"
+  pull_request
 
 jobs:
   build:
