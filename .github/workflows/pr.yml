@@ -1,6 +1,9 @@
-trigger:
-  pull_request
+name: Basic check
 
+on:
+  pull_request:
+    branches:
+      - "*"
 
 jobs:
   build:
