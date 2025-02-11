@@ -1,3 +1,5 @@
+name: Basic check
+
 on:
   pull_request
 
